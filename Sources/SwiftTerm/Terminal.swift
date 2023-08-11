@@ -56,7 +56,7 @@ public protocol TerminalDelegate: AnyObject {
      */
     @discardableResult
     func windowCommand (source: Terminal, command: Terminal.WindowManipulationCommand) -> [UInt8]?
-    
+
     /**
      * This method is invoked when the terminal dimensions have changed in response
      * to an escape sequence that triggers a terminal resize, the user interface toolkit
@@ -67,31 +67,31 @@ public protocol TerminalDelegate: AnyObject {
      * The default implementation does nothing.
      */
     func sizeChanged (source: Terminal)
-    
+
     /**
      * Sends the byte data to the client connected to the terminal (in terminal emulation
      * documentation, this is the "host")
      */
     func send (source: Terminal, data: ArraySlice<UInt8>)
-    
+
     // callbacks
-    
+
     /// Callback - the window was scrolled, new yDisplay passed
     /// The default implementation does nothing.
     func scrolled (source: Terminal, yDisp: Int)
-    
+
     /// Callback a newline was generated
     /// The default implementation does nothing.
     func linefeed (source: Terminal)
-    
+
     /// This method is invoked when the buffer changes from Normal to Alternate, or Alternate to Normal
     /// The default implementation does nothing.
     func bufferActivated (source: Terminal)
-    
+
     /// Should raise the bell
     /// The default implementation does nothing.
     func bell (source: Terminal)
-    
+
     /**
      * This is invoked when the selection has changed, or has been turned on.   The status is
      * available in `terminal.selection.active`, and the range relative to the buffer is
@@ -100,7 +100,7 @@ public protocol TerminalDelegate: AnyObject {
      * The default implementation does nothing.
      */
     func selectionChanged (source: Terminal)
-    
+
     /**
      * This method should return `true` if operations that can read the buffer back should be allowed,
      * otherwise, return false.   This is useful to run some applications that attempt to checksum the
@@ -109,7 +109,7 @@ public protocol TerminalDelegate: AnyObject {
      * The default implementation returns `true`
      */
     func isProcessTrusted (source: Terminal) -> Bool
-    
+
     /**
      * This method is invoked when the `mouseMode` property has changed, and gives the UI
      * a chance to update any tracking capabilities that are required in the toolkit or no longer
@@ -118,13 +118,13 @@ public protocol TerminalDelegate: AnyObject {
      * The default implementation ignores the mouse change
      */
     func mouseModeChanged (source: Terminal)
-    
+
     /**
      * This method is invoked when a request to change the cursor style has been issued
      * by client application.
      */
     func cursorStyleChanged (source: Terminal, newStyle: CursorStyle)
-    
+
     /**
      * This method is invoked when the client application has issued a command to report
      * its current working directory (this is done with the OSC 7 command).   The value can be
@@ -133,7 +133,7 @@ public protocol TerminalDelegate: AnyObject {
      * The default implementaiton does nothing.
      */
     func hostCurrentDirectoryUpdated (source: Terminal)
-    
+
     /**
      * This method is invoked when the client application has issued a command to report
      * its current document (this is done with the OSC 6 command).   The value can be
@@ -142,35 +142,35 @@ public protocol TerminalDelegate: AnyObject {
      * The default implementaiton does nothing.
      */
     func hostCurrentDocumentUpdated (source: Terminal)
-    
+
     /**
      * This method is invoked when a color in the 0..255 palette has been redefined, if the
      * front-end keeps a cache or uses indexed rendering, it should update the color
      * with the new values.   If the value of idx is nil, this means all the ansi colors changed
      */
     func colorChanged (source: Terminal, idx: Int?)
-    
+
     /**
      * The view should try to set the foreground color to the provided color
      */
     func setForegroundColor (source: Terminal, color: Color)
-    
+
     /**
      * The view should try to set the background color to the provided color
      */
     func setBackgroundColor (source: Terminal, color: Color)
-    
+
     /**
      * The view should try to set the cursor color to the provided color.   If color is nil, the view can use a default.
      */
     func setCursorColor (source: Terminal, color: Color?)
-    
+
     /**
      * This should return the current foreground and background colors to
      * report.
      */
     func getColors (source: Terminal) -> (foreground: Color, background: Color)
-    
+
     /**
      * This method is invoked when the client application (iTerm2) has issued a OSC 1337 and
      * SwiftTerm did not handle a handler for it.
@@ -178,7 +178,7 @@ public protocol TerminalDelegate: AnyObject {
      * The default implementaiton does nothing.
      */
     func iTermContent (source: Terminal, content: ArraySlice<UInt8>)
-    
+
     /**
      * This method is invoked when the client application has issued a OSC 52
      * to put data on the clipboard.
@@ -189,7 +189,7 @@ public protocol TerminalDelegate: AnyObject {
      * The default implementation does nothing.
      */
     func clipboardCopy(source: Terminal, content: Data)
-    
+
     /**
      * Invoked when client application issues OSC 777 to show notification.
      *
@@ -200,7 +200,7 @@ public protocol TerminalDelegate: AnyObject {
      *  - body: the body of the notification
      */
     func notify(source: Terminal, title: String, body: String)
-    
+
     /**
      * Invoked to create an image from an RGBA buffer at the current cursor position
      *
@@ -212,7 +212,7 @@ public protocol TerminalDelegate: AnyObject {
      *  - height: the height in pixels of the image
      */
     func createImageFromBitmap (source: Terminal, bytes: inout [UInt8], width: Int, height: Int)
-    
+
     /**
      * Invoked to create an image from a byte blob that might be encoded in one of the various
      * compressed file formats (unlike the other option that gets an RGBA buffer already decoded).
@@ -245,7 +245,7 @@ public protocol TerminalImage {
     var pixelWidth: Int { get }
     /// The height of the image in pixels
     var pixelHeight: Int { get }
-    
+
     /// Column where the image was attached
     var col: Int { get set }
 }
@@ -267,41 +267,41 @@ public protocol TerminalImage {
 open class Terminal {
     let MINIMUM_COLS = 2
     let MINIMUM_ROWS = 1
-    
+
     /// The current terminal columns (counting from 1)
     public private(set) var cols: Int = 80
-    
+
     /// The current terminal rows (counting from 1)
     public private(set) var rows: Int = 25
     var tabStopWidth : Int = 8
     var options: TerminalOptions
-    
+
     // The current buffers
     var buffers : BufferSet!
-    
+
     // Whether the terminal is operating in application keypad mode
     var applicationKeypad : Bool = false
-    
+
     // Whether the terminal is operating in application cursor mode
     public var applicationCursor : Bool = false
-    
+
     // You can ignore most of the defaults set here, the function
     // reset() will do that again
     var sendFocus: Bool = false
     var cursorHidden : Bool = false
-    
+
     /// Controls the origin mode (DECOM), when set, the screen is limited to the top and bottom margins
     var originMode: Bool = false
-    
+
     /// Controls whether it is possible to set left and right margin modes
     var marginMode: Bool = false
-    
+
     var insertMode: Bool = false
-    
+
     /// Indicates that the application has toggled bracketed paste mode, which means that when content is pasted into
     /// the terminal, the content will be wrapped in "ESC [ 200 ~" to start, and "ESC [ 201 ~" to end.
     public private(set) var bracketedPasteMode: Bool = false
-    
+
     var charset: [UInt8:String]? = nil
     var gcharset: Int = 0
     var wraparound: Bool = false
@@ -310,46 +310,46 @@ open class Terminal {
     var curAttr: Attribute = CharData.defaultAttr
     var gLevel: UInt8 = 0
     var cursorBlink: Bool = false
-    
+
     var allow80To132 = true
-    
+
     public var parser: EscapeSequenceParser
-    
+
     var refreshStart = Int.max
     var refreshEnd = -1
     var scrollInvariantRefreshStart = Int.max
     var scrollInvariantRefreshEnd = -1
     var userScrolling = false
     var lineFeedMode = false
-    
+
     // We do not implement smooth scrolling here, dubious value, but
     // makes a test bass
     var smoothScroll = false
-    
+
     // Installed colors are the 16 values that can be changed dynamically by the host
     var installedColors: [Color]
     // The blueprint for the colors, computed based on the installed colors
     var defaultAnsiColors: [Color]
     // The active set of colors (based on the blueprint)
     var ansiColors: [Color]
-    
+
     // Control codes provides an API to send either 8bit sequences or 7bit sequences for C0 and C1 depending on the terminal state
     var cc: CC
-    
+
     /// This variable if set, contains an URI representing the host and directory of the process running in the terminal
     /// it is often used by applciations to track the working directory.   It might be nil, or might not be correct, the
     /// contents are entirely under the control of the remote application, and require the terminal to be trusted
     /// (see the `isProcessTrusted` method in the `TerminalDelegate`).  When this is set the
     /// `hostCurrentDirectoryUpdated` method on the delegate is invoked.
     public private(set) var hostCurrentDirectory: String? = nil
-    
+
     /// This variable if set, contains an URI representing the host and current document of the process
     /// running in the terminal.   It might be nil, or might not be correct, the
     /// contents are entirely under the control of the remote application, and require the terminal to be trusted
     /// (see the `isProcessTrusted` method in the `TerminalDelegate`).  When this is set the
     /// `hostCurrentDocumentUpdated` method on the delegate is invoked.
     public private(set) var hostCurrentDocument: String? = nil
-    
+
     /// The current attribute used by the terminal by default
     public var currentAttribute: Attribute {
         get { return curAttr }
@@ -362,7 +362,7 @@ open class Terminal {
         case vt400
         case vt500
     }
-    
+
     // The mouse coordinates can be encoded in a number of ways, and obey to historical
     // upgrades to the protocol, but also attempts at fixing limitations of the different
     // encodings.
@@ -370,24 +370,28 @@ open class Terminal {
         // The default x10 mode is limited to coordinates up to 223.
         // (255-32).   The other modes solve this limitaion
         case x10
-        
+
         // Extends the range of a coordinate to 2015 by using UTF-8 encoding of the
         // coordinate value.   This encoding is troublesome for applications that
         // do not support utf8 input.
         case utf8
-        
+
         // The response uses CSI < ButtonValue ; Px ; Py [Mm]
         case sgr
 
         // Different response style, with possible ambiguities, not recommended
         case urxvt
-        
+
         // SGR with pixel precision
         case sgrPixel
     }
-    
+
     // The protocol encoding for the terminal
-    private var mouseProtocol: MouseProtocolEncoding = .x10
+    private var mouseProtocol: MouseProtocolEncoding = .x10 {
+        didSet {
+            print("mouseProtocol = \(mouseProtocol)")
+        }
+    }
 
     // This is used to track if we are setting the colors, to prevent a
     // recursive invocation (nativeForegroundColor sets the terminal
@@ -416,7 +420,7 @@ open class Terminal {
             settingBgColor = false
         }
     }
-    
+
     // This tracks the requested cursor color or nil to use a view-default
     public var cursorColor: Color? = nil {
         didSet {
@@ -428,7 +432,7 @@ open class Terminal {
             settingCursorColor = false
         }
     }
-    
+
     ///
     /// Represents the mouse operation mode that the terminal is currently using and higher level
     /// implementations should use the functions in this enumeration to determine what events to
@@ -436,53 +440,53 @@ open class Terminal {
     public enum MouseMode {
         /// No mouse events are reported
         case off
-        
+
         /// X10 Compatibility mode - only sends events in button press
         case x10
-        
+
         /// VT200, also known as Normal Tracking Mode - sends both press and release events
         case vt200
-        
+
         /// ButtonEventTracking - In addition to sending button press and release events, it sends motion events when the button is pressed
         case buttonEventTracking
-        
+
         /// Sends button presses, button releases, and motion events regardless of the button state
         case anyEvent
-        
+
         // Unsupported modes:
         // - vt200Highlight, this can deadlock the terminal
         // - declocator, rarely used
-        
+
         /// Returns true if you should send a button press event (separate from release)
         func sendButtonPress () -> Bool
         {
             self == .vt200 || self == .buttonEventTracking || self == .anyEvent
         }
-        
+
         /// Returns true if you should send the button release event
         func sendButtonRelease () -> Bool
         {
             self != .off
         }
-        
+
         /// Returns true if you should send a motion event when a button is pressed
         func sendButtonTracking () -> Bool
         {
             self == .buttonEventTracking || self == .anyEvent
         }
-        
+
         /// Returns true if you should send a motion event, regardless of button state
         public func sendMotionEvent () -> Bool
         {
             self == .anyEvent
         }
-        
+
         /// Returns true if the modifiers should be encoded
         public func sendsModifiers() -> Bool {
             self == .vt200 || self == .buttonEventTracking || self == .anyEvent
         }
     }
-    
+
     public private(set) var mouseMode: MouseMode = .off {
         didSet {
             tdel?.mouseModeChanged (source: self)
@@ -495,9 +499,9 @@ open class Terminal {
     var xtermTitleSetHex = false
     var xtermTitleQueryUtf = false
     var xtermTitleQueryHex = false
-    
+
     var conformance: TerminalConformance = .vt500
-    
+
     /**
      * Returns true if we should respect the left/right margins, which is based on the originMode and marginMode setting
      */
@@ -505,13 +509,13 @@ open class Terminal {
     {
         return originMode && marginMode
     }
-    
+
     /// Returns the terminal dimensions 1-based values
     public func getDims () -> (cols: Int,rows: Int)
     {
         return (cols, rows)
     }
-    
+
     public init (delegate : TerminalDelegate, options: TerminalOptions = TerminalOptions.default)
     {
         installedColors = Color.defaultInstalledColors
@@ -542,7 +546,7 @@ open class Terminal {
         defaultAnsiColors = Color.setupDefaultAnsiColors (initialColors: installedColors)
         ansiColors = defaultAnsiColors
     }
-    
+
     /**
      * Returns the active buffer (either the normal buffer or the alternative buffer)
      */
@@ -597,12 +601,12 @@ open class Terminal {
     /// - Parameter col: column to retrieve, starts at 0
     /// - Parameter row: row to retrieve, starts at 0
     /// - Returns: nil if the col or row are out of bounds, or the Character contained in that cell otherwise
-    
+
     public func getCharacter (col: Int, row: Int) -> Character?
     {
         return getCharData(col: col, row: row)?.getCharacter()
     }
-    
+
     func setup (isReset: Bool = false)
     {
         // Sadly a duplicate of much of what lives in init() due to Swift not allowing me to
@@ -616,47 +620,47 @@ open class Terminal {
             buffers = BufferSet(self)
         }
         cursorHidden = false
-        
+
         // modes
         applicationKeypad = false
         applicationCursor = false
         originMode = false
-        
+
         marginMode = false
         insertMode = false
         wraparound = true
         bracketedPasteMode = false
-        
+
         // charset'
         charset = nil
         gcharset = 0
         gLevel = 0
         curAttr = CharData.defaultAttr
-        
+
         mouseMode = .off
-        
+
         buffer.scrollTop = 0
         buffer.scrollBottom = rows-1
         buffer.marginLeft = 0
         buffer.marginRight = cols-1
-        
+
         cc.send8bit = false
         conformance = .vt500
-        
+
         allow80To132 = true
-        
+
         xtermTitleSetUtf = false
         xtermTitleQueryUtf = false
-        
+
         xtermTitleSetHex = false
         xtermTitleQueryHex = false
-        
+
         hyperLinkTracking = nil
         cursorBlink = false
         hostCurrentDirectory = nil
         lineFeedMode = options.convertEol
     }
-    
+
     // DCS $ q Pt ST
     // DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
     //   Request Status String (DECRQSS), VT420 and up.
@@ -675,14 +679,14 @@ open class Terminal {
         {
             data = []
         }
-        
+
         func put (data : ArraySlice<UInt8>)
         {
             for x in data {
                 self.data.append(x)
             }
         }
-        
+
         func unhook ()
         {
             let newData = String (bytes: data, encoding: .ascii)
@@ -735,7 +739,7 @@ open class Terminal {
         }
         parser.printHandler = { [unowned self] slice in handlePrint (slice) }
         parser.printStateReset = { [unowned self] in printStateReset() }
-        
+
         // CSI handler
         parser.csiHandlers [UInt8 (ascii: "@")] = { [unowned self] pars, collect in cmdInsertChars (pars, collect) }
         parser.csiHandlers [UInt8 (ascii: "A")] = { [unowned self] pars, collect in cmdCursorUp (pars, collect) }
@@ -798,7 +802,7 @@ open class Terminal {
         parser.executeHandlers [9]  = { [unowned self] in cmdTab () }
         parser.executeHandlers [14] = { [unowned self] in cmdShiftOut () }
         parser.executeHandlers [15] = { [unowned self] in cmdShiftIn () }
-        
+
         parser.executeHandlers [0x84] = { [unowned self] in cmdIndex () }
         parser.executeHandlers [0x85] = { [unowned self] in cmdNextLine () }
         parser.executeHandlers [0x88] = {  [unowned self] in cmdTabSet () }
@@ -815,7 +819,7 @@ open class Terminal {
         //   3 - set property X in the form "prop=value"
         //   4 - Change Color Number()
         parser.oscHandlers [4] = { [unowned self] data in oscChangeOrQueryColorIndex (data) }
-        
+
         //   5 - Change Special Color Number
         //   6 - Enable/disable Special Color Number c
 
@@ -824,7 +828,7 @@ open class Terminal {
 
         //   7 - current directory? (not in xterm spec, see https://gitlab.com/gnachman/iterm2/issues/3939)
         parser.oscHandlers [7] = { [unowned self] data in oscSetCurrentDirectory (data) }
-        
+
         parser.oscHandlers [8] = { [unowned self] data in oscHyperlink (data) }
         //  10 - Change VT100 text foreground color to Pt.
         parser.oscHandlers [10] = { [unowned self] data in oscSetColors (data, startAt: 0) }
@@ -832,7 +836,7 @@ open class Terminal {
         parser.oscHandlers [11] = { [unowned self] data in oscSetColors (data, startAt: 1) }
         //  12 - Change text cursor color to Pt.
         parser.oscHandlers [12] = { [unowned self] data in oscSetColors (data, startAt: 2) }
-        
+
         //  13 - Change mouse foreground color to Pt.
         //  14 - Change mouse background color to Pt.
         //  15 - Change Tektronix foreground color to Pt.
@@ -847,7 +851,7 @@ open class Terminal {
         parser.oscHandlers [52] = { [unowned self] data in oscClipboard (data) }
         // 104 ; c - Reset Color Number c.
         parser.oscHandlers [104] = { [unowned self] data in oscResetColor (data) }
-        
+
         // 105 ; c - Reset Special Color Number c.
         // 106 ; c; f - Enable/disable Special Color Number c.
         // 110 - Reset VT100 text foreground color.
@@ -888,10 +892,10 @@ open class Terminal {
         parser.setEscHandler ("#8", { [unowned self] collect, flag in self.cmdScreenAlignmentPattern () })
         parser.setEscHandler (" G") { [unowned self] collect, flag in self.cmdSet8BitControls () }
         parser.setEscHandler (" F") { [unowned self] collect, flag in self.cmdSet7BitControls () }
-        
+
         for bflag in CharSets.all.keys {
             let flag = String (UnicodeScalar (bflag))
-            
+
             parser.setEscHandler ("(" + flag, { [unowned self] code, f in self.selectCharset ([UInt8 (ascii: "(")] + [f]) })
             parser.setEscHandler (")" + flag, { [unowned self] code, f in self.selectCharset ([UInt8 (ascii: ")")] + [f]) })
             parser.setEscHandler ("*" + flag, { [unowned self] code, f in self.selectCharset ([UInt8 (ascii: "*")] + [f]) })
@@ -912,7 +916,7 @@ open class Terminal {
         parser.setDcsHandler ("q", SixelDcsHandler (terminal: self))
         parser.dscHandlerFallback = { code, parameters in }
     }
-    
+
     /// This allows users of the terminal to register a handler for an OSC code.
     /// - Parameters:
     ///  - code: the code for the OSC handler to register, no checks are made that this overrides an existing handler
@@ -921,7 +925,7 @@ open class Terminal {
     {
         parser.oscHandlers [code] = handler
     }
-    
+
     func cmdSet8BitControls ()
     {
         cc.send8bit = true
@@ -936,7 +940,7 @@ open class Terminal {
     {
         // In the original code, it is mediocre accessibility, so likely will remove this
     }
-    
+
     func emitChar (_ ch: Character)
     {
         // In the original code, it is mediocre accessibility, so likely will remove this
@@ -960,7 +964,7 @@ open class Terminal {
         var rest:ArraySlice<UInt8> = [][...]
         var idx = 0
         var count:Int = 0
-        
+
         // Invoke this method at the beginning of parse
         mutating func prepare (_ data: ArraySlice<UInt8>)
         {
@@ -969,16 +973,16 @@ open class Terminal {
             count = putbackBuffer.count + data.count
             idx = 0
         }
-        
+
         func hasNext () -> Bool {
             idx < count
         }
-        
+
         func bytesLeft () -> Int
         {
             count-idx
         }
-        
+
         mutating func getNext () -> UInt8
         {
             if idx < putbackBuffer.count {
@@ -990,7 +994,7 @@ open class Terminal {
             idx += 1
             return v
         }
-        
+
         // Puts back the code, and everything that was pending
         mutating func putback (_ code: UInt8)
         {
@@ -1002,7 +1006,7 @@ open class Terminal {
             putbackBuffer = newPutback
             rest = [][...]
         }
-        
+
         mutating func done  ()
         {
             if idx < putbackBuffer.count {
@@ -1012,29 +1016,29 @@ open class Terminal {
             }
             rest = [][...]
         }
-        
+
         mutating func reset ()
         {
             putbackBuffer = []
             idx = 0
         }
     }
-    
+
     var readingBuffer = ReadingBuffer ()
-    
+
     func printStateReset ()
     {
         readingBuffer.reset ()
     }
-    
+
     // This variable holds the last location that we poked a Character on.   This is required
     // because combining unicode characters come after the character, so we need to poke back
     // at this location.   We track the buffer (so we can distinguish Alt/Normal), the buffer line
     // that we fetched, and the column.
     var lastBufferStorage: (buffer: Buffer, y: Int, x: Int, cols: Int, rows: Int)? = nil
-    
+
     var lastBufferCol: Int = 0
-    
+
     func handlePrint (_ data: ArraySlice<UInt8>)
     {
         let buffer = self.buffer
@@ -1045,7 +1049,7 @@ open class Terminal {
             var ch: Character = " "
             var chWidth: Int = 0
             let code = readingBuffer.getNext()
-            
+
             let n = UnicodeUtil.expectedSizeFromFirstByte(code)
 
             if n == -1 || n == 1 {
@@ -1057,18 +1061,18 @@ open class Terminal {
                 // search for an replacement char if code < 127
                 var chSet = false
                 if code < 127 && charset != nil {
-                    
+
                     // Notice that the charset mapping can contain the dutch unicode sequence for "ij",
                     // so it is not a simple byte, it is a Character
                     if let str = charset! [UInt8 (code)] {
                         ch = str.first!
-                        
+
                         // Every single mapping in the charset only takes one slot
                         chWidth = 1
                         chSet = true
                     }
                 }
-                
+
                 if chSet == false {
                     let rune = UnicodeScalar (code)
                     chWidth = UnicodeUtil.columnWidth(rune: rune)
@@ -1083,7 +1087,7 @@ open class Terminal {
                 x.withUnsafeBytes { ptr in
                     let unsafeBound = ptr.bindMemory(to: UInt8.self)
                     let unsafePointer = unsafeBound.baseAddress!
-                    
+
                     let s = String (cString: unsafePointer)
                     ch = s.first ?? Character (" ")
 
@@ -1109,15 +1113,15 @@ open class Terminal {
                     // Determine if the last time we poked at a character is still valid
                     if let last = lastBufferStorage {
                         if last.buffer === buffers.active && last.cols == cols && last.rows == rows {
-                            
+
                             // Fetch the old character, and attempt to combine it:
                             let existingLine = buffer.lines [last.y]
                             let lastx = last.x >= cols ? cols-1 : last.x
                             var cd = existingLine [lastx]
-                            
+
                             // Attemp the combination
                             let newStr = String ([cd.getCharacter (), ch])
-                            
+
                             // If the resulting string is 1 grapheme cluster, then it combined properly
                             if newStr.count == 1 {
                                 if let newCh = newStr.first {
@@ -1139,12 +1143,12 @@ open class Terminal {
             if ch != "\u{200d}" {
                 let charData = CharData (attribute: curAttr, char: ch, size: Int8 (chWidth))
                 insertCharacter (charData)
-            } 
+            }
         }
         updateRange (buffer.y)
         readingBuffer.done ()
     }
-    
+
     // Inserts the specified character with the computed width into the next cell, following
     // the rules for wrapping around, scrolling and overflow expected in the terminal.
     func insertCharacter (_ charData: CharData)
@@ -1226,14 +1230,14 @@ open class Terminal {
     {
         cmdLineFeedBasic ()
     }
-    
+
     func cmdLineFeedBasic ()
     {
         let buffer = self.buffer
         let by = buffer.y
-        
+
         let canScroll = buffer.x >= buffer.marginLeft && buffer.x <= buffer.marginRight
-        
+
         if by == buffer.scrollBottom {
             if canScroll {
                 scroll(isWrapped: false)
@@ -1242,19 +1246,19 @@ open class Terminal {
         } else {
                 buffer.y = by + 1
         }
-        
+
         // If the end of the line is hit, prevent this action from wrapping around to the next line.
         if buffer.x >= cols {
             buffer.x -= 1
         }
-        
+
         // This event is emitted whenever the terminal outputs a LF or NL.
         emitLineFeed()
         if lineFeedMode {
             buffer.x = usingMargins() ? buffer.marginLeft : 0
         }
     }
-    
+
     //
     // Backspace handler (Control-h)
     //
@@ -1262,7 +1266,7 @@ open class Terminal {
     {
         let buffer = self.buffer
         restrictCursor(!reverseWraparound)
-        
+
         let left = marginMode ? buffer.marginLeft : 0
         let right = marginMode ? buffer.marginRight : buffer.cols-1
 
@@ -1274,7 +1278,7 @@ open class Terminal {
                     if !marginMode {
                         buffer.lines [buffer.y + buffer.yBase].isWrapped = false
                     }
-                    
+
                     buffer.y -= 1
                     buffer.x = right
                 // TODO: find actual last cell based on width used
@@ -1296,11 +1300,11 @@ open class Terminal {
                 // If we have not reached the limit, we can go back, otherwise stop at the margin
                 // Test BS_StopsAtLeftMargin
                 buffer.x -= 1
-            
+
             }
         }
     }
-    
+
     func cmdCarriageReturn ()
     {
         let buffer = self.buffer
@@ -1314,7 +1318,7 @@ open class Terminal {
             buffer.x = 0
         }
     }
-    
+
     //
     // Horizontal tab (control-i)
     //
@@ -1329,22 +1333,22 @@ open class Terminal {
     {
         setgLevel (1)
     }
-    
+
     // SI
     // ShiftIn (Control-O) Switch to standard character set.  This invokes the G0 character set
     func cmdShiftIn ()
     {
         setgLevel(0)
     }
-    
+
     // Operating System Commands (OSC)
-    
+
     func resetAllColors ()
     {
         ansiColors = defaultAnsiColors
         tdel?.colorChanged (source: self, idx: nil)
     }
-    
+
     func resetColor (_ number: Int)
     {
         if number > 255 {
@@ -1353,7 +1357,7 @@ open class Terminal {
         ansiColors [number] = defaultAnsiColors [number]
         tdel?.colorChanged(source: self, idx: number)
     }
-    
+
     func oscResetColor (_ data: ArraySlice<UInt8>)
     {
         if data == [] {
@@ -1367,7 +1371,7 @@ open class Terminal {
             }
         }
     }
-    
+
     // Implements OSC 7 ; URL which records the current working directory
     func oscSetCurrentDirectory (_ data: ArraySlice<UInt8>)
     {
@@ -1383,7 +1387,7 @@ open class Terminal {
             tdel?.hostCurrentDirectoryUpdated (source: self)
         }
     }
-    
+
     // Implements OSC 6 ; URL which records the current document
     func oscSetCurrentDocument (_ data: ArraySlice<UInt8>)
     {
@@ -1401,7 +1405,7 @@ open class Terminal {
     }
 
     var hyperLinkTracking: (start: Position, payload: String)? = nil
-    
+
     func oscHyperlink (_ data: ArraySlice<UInt8>)
     {
         let buffer = self.buffer
@@ -1411,7 +1415,7 @@ open class Terminal {
                 let str = hlt.payload
                 if let urlToken = TinyAtom.lookup (value: str) {
                     //print ("Setting the text from \(hlt.start) to \(buffer.x) on line \(buffer.y+buffer.yBase) to \(str)")
-                    
+
                     // Between the time the flag was set, and now `y` might have changed negatively,
                     // in that case, we do not flag any sequence as a hyperlink
                     if hlt.start.row <= buffer.y+buffer.yBase {
@@ -1435,7 +1439,7 @@ open class Terminal {
             hyperLinkTracking = (start: Position(col: buffer.x, row: buffer.y+buffer.yBase), payload: String (bytes:data, encoding: .ascii) ?? "")
         }
     }
-    
+
     // Copy to clipboard with sequence on the form:
     //    ESC ] 52 ; c ; [base64 data] \a
     // where c is for copy and the only thing supported.
@@ -1446,28 +1450,28 @@ open class Terminal {
               data[data.startIndex+1] == UInt8(ascii: ";") else {
             return
         }
-        
+
         let base64 = Data(data[(data.startIndex+2)...])
         guard let content = Data(base64Encoded: base64) else {
             return
         }
-        
+
         tdel?.clipboardCopy(source: self, content: content)
     }
-    
+
     // Notifications:
     //    ESC ] 777 ; notify ; [title] ; [body] \a
     func oscNotification(_ data: ArraySlice<UInt8>) {
         guard let text = String(bytes: data, encoding: .utf8) else {
             return
         }
-        
+
         let parts = text.components(separatedBy: ";")
         guard parts.count >= 3,
               parts[0] == "notify" else {
             return
         }
-        
+
         let title = parts[1]
         let body = parts[2...].joined(separator: ";")
         tdel?.notify(source: self, title: title, body: body)
@@ -1501,13 +1505,13 @@ open class Terminal {
             } while current < data.endIndex
             return kv
         }
-        
+
         /// Parses the dimension specification ("auto", "N%", "Npx" or "N") and returns the enum value for it
         /// puts some artificial limits, to prevent bloat or attacks
         func parseDimension(_ kv: [String:String], key: String) -> ImageSizeRequest {
             let artificialDimensionSizeLimit = 1024*4
             let artificialColumnLimit = 200
-            
+
             guard let v = kv [key] else {
                 return .auto
             }
@@ -1523,11 +1527,11 @@ open class Terminal {
             if let n = Int (v), n > 0, n < artificialColumnLimit { return .cells(n) }
             return .auto
         }
-        
+
         guard let equalIdx = data.firstIndex (where: { b in b == UInt8(ascii: "=") }) else {
             return
         }
-        
+
         guard let key = String(bytes: data[data.startIndex..<equalIdx], encoding: .utf8) else {
             return
         }
@@ -1544,7 +1548,7 @@ open class Terminal {
             if kv["inline"] != "1" {
                 break
             }
-            
+
             guard let imgData = Data(base64Encoded: Data(data [colonIdx+1..<data.endIndex])) else {
                 return
             }
@@ -1556,10 +1560,10 @@ open class Terminal {
         default:
             break
         }
-        
+
         tdel?.iTermContent(source: self, content: data)
     }
-    
+
     // OSC 4
     func oscChangeOrQueryColorIndex (_ data: ArraySlice<UInt8>)
     {
@@ -1572,7 +1576,7 @@ open class Terminal {
             guard color < 256 else {
                 return
             }
-        
+
             // If the request is a query, reply with the current color definition
             if p+1 < data.endIndex && data [p+1] == UInt8 (ascii: "?") {
                 sendResponse (cc.OSC, "4;\(color);\(ansiColors [color].formatAsXcolor())", cc.ST)
@@ -1582,28 +1586,28 @@ open class Terminal {
                 }
                 continue
             }
-    
+
             //let str = String (bytes:data, encoding: .ascii) ?? ""
             //print ("Parsing color definition \(str)")
 
             parsePos = p + 1
-        
+
             let end = data [parsePos...].firstIndex(of: UInt8(ascii: ";")) ?? data.endIndex
-            
+
             if let newColor = Color.parseColor (data [parsePos..<end]) {
                 ansiColors [color] = newColor
                 tdel?.colorChanged (source: self, idx: color)
             }
             parsePos = end+1
         }
-        
+
         //log ("Attempt to set the text Foreground color \(str)")
     }
-    
+
     func reportColor (oscCode: Int, color: Color) {
         sendResponse(cc.OSC, "\(oscCode);\(color.formatAsXcolor ())", cc.ST)
     }
-    
+
     // This handles both setting the foreground, but spill into background and cursor color
     // if more parameters are provided (ie, sending OSC 10 with #ffffff,#000000,#ff0000
     // sets the foreground to #ffffff, background to #000000 and cursor to ff0000
@@ -1618,7 +1622,7 @@ open class Terminal {
         while next < groups.count {
             defer { next += 1 }
             let text = groups [next]
-            
+
             if text.first == UInt8 (ascii: "?") {
                 switch next {
                 case 0:
@@ -1630,7 +1634,7 @@ open class Terminal {
                 default:
                     break
                 }
-                
+
                 continue
             }
 
@@ -1701,7 +1705,7 @@ open class Terminal {
     {
         buffer.tabSet (pos: buffer.x)
     }
-    
+
     //
     // CSI Ps @
     // Insert Ps (Blank) Character(s) (default = 1) (ICH).
@@ -1714,12 +1718,12 @@ open class Terminal {
         }
         let cd = CharData (attribute: eraseAttr ())
         let buffer = self.buffer
-        
+
         buffer.lines [buffer.y + buffer.yBase].insertCells (pos: buffer.x, n: pars.count > 0 ? max (pars [0], 1) : 1, rightMargin: marginMode ? buffer.marginRight : cols-1, fillData: cd)
 
         updateRange (buffer.y)
     }
-    
+
     //
     // CSI Ps A
     // Cursor Up Ps Times (default = 1) (CUU).
@@ -1729,7 +1733,7 @@ open class Terminal {
         let param = max (pars.count > 0 ? pars [0] : 1, 1)
         let buffer = self.buffer
         var top = buffer.scrollTop
-        
+
         if buffer.y < top {
             top = 0
         }
@@ -1739,7 +1743,7 @@ open class Terminal {
             buffer.y -= param
         }
     }
-    
+
     //
     // CSI Ps B
     // Cursor Down Ps Times (default = 1) (CUD).
@@ -1748,7 +1752,7 @@ open class Terminal {
     {
         let buffer = self.buffer
         let param = max (pars.count > 0 ? pars [0] : 1, 1)
-        
+
         var bottom = buffer.scrollBottom
         // When the cursor starts below the scroll region, CUD moves it down to the
         // bottom of the screen.
@@ -1767,7 +1771,7 @@ open class Terminal {
                 buffer.x -= 1
         }
     }
-    
+
     //
     // CSI Ps B
     // Cursor Forward Ps Times (default = 1) (CUF).
@@ -1776,11 +1780,11 @@ open class Terminal {
     {
         cursorForward(count: pars.count > 0 ? pars [0] : 1)
     }
-    
+
     func cursorForward (count: Int)
     {
         var right = marginMode ? buffer.marginRight : cols-1
-        
+
         // When the cursor starts after the right margin, CUF moves to the full width
         if buffer.x > right {
             right = buffer.cols - 1
@@ -1799,14 +1803,14 @@ open class Terminal {
     {
         cursorBackward(count: pars.count > 0 ? pars [0] : 1)
     }
-    
+
     func cursorBackward (count: Int)
     {
         let buffer = self.buffer
-        
+
         // What is our left margin - depending on the settings.
         var left = marginMode ? buffer.marginLeft : 0
-        
+
         // If the cursor is positioned before the margin, we can go backwards to the first column
         if buffer.x < left {
             left = 0
@@ -1830,7 +1834,7 @@ open class Terminal {
             buffer.x = buffer.nextTabStop ()
         }
     }
-    
+
     /**
      * Restrict cursor to viewport size / scroll margin (origin mode)
      * - Parameter limitCols: by default it is true, but the reverseWraparound mechanism in Backspace needs `x` to go beyond.
@@ -1841,7 +1845,7 @@ open class Terminal {
         buffer.y = originMode
             ? min (buffer.scrollBottom, max (buffer.scrollTop, buffer.y))
             : min (rows - 1, max (0, buffer.y))
-        
+
         updateRange(buffer.y)
     }
 
@@ -1853,7 +1857,7 @@ open class Terminal {
     {
         setCursor (col: pars.count >= 2 ? (max (1, pars [1])-1) : 0, row: pars.count >= 1 ? (max (1, pars [0]) - 1) : 0)
     }
-    
+
     func setCursor (col: Int, row: Int)
     {
         updateRange(buffer.y)
@@ -1910,7 +1914,7 @@ open class Terminal {
     {
         cmdCursorUp(pars, collect)
         buffer.x = buffer.marginLeft
-        
+
         //let param = max (pars.count > 0 ? pars [0] : 1, 1)
         //let buffer = self.buffer
         //var top = buffer.scrollTop
@@ -1952,7 +1956,7 @@ open class Terminal {
     func cmdEraseInLine (_ pars: [Int], _ collect: cstring)
     {
         let p = pars.count == 0 ? 0 : pars [0]
-        
+
         switch p {
         case 0:
             eraseInBufferLine (y: buffer.y, start: buffer.x, end: cols)
@@ -1993,7 +1997,7 @@ open class Terminal {
                 j += 1
             }
             updateRange (j - 1)
-            
+
         case 1:
             j = buffer.y
             updateRange (j)
@@ -2051,7 +2055,7 @@ open class Terminal {
             line.renderMode = .single
         }
     }
-    
+
     //
     // CSI Ps L
     // Insert Ps Line(s) (default = 1) (IL).
@@ -2066,10 +2070,10 @@ open class Terminal {
         let maxLines = buffer._lines.maxLength * 2
         var p = min (maxLines, max (pars.count == 0 ? 1 : pars [0], 1))
         let row = buffer.y + buffer.yBase
-        
+
         let scrollBottomRowsOffset = rows - 1 - buffer.scrollBottom
         let scrollBottomAbsolute = rows - 1 + buffer.yBase - scrollBottomRowsOffset + 1
-        
+
         let ea = eraseAttr ()
         if marginMode {
             if buffer.x >= buffer.marginLeft && buffer.x <= buffer.marginRight {
@@ -2079,10 +2083,10 @@ open class Terminal {
                     for i in (0..<rowCount).reversed() {
                         let src = buffer.lines [row+i]
                         let dst = buffer.lines [row+i+1]
-                        
+
                         dst.copyFrom(src, srcCol: buffer.marginLeft, dstCol: buffer.marginLeft, len: columnCount)
                     }
-                    
+
                     let last = buffer.lines [row]
                     last.fill (with: CharData (attribute: ea), atCol: buffer.marginLeft, len: columnCount)
                 }
@@ -2101,7 +2105,7 @@ open class Terminal {
         // this.maxRange();
         updateRange (startLine: buffer.y, endLine: buffer.scrollBottom)
     }
-    
+
     //
     // ESC ( C
     //   Designate G0 Character Set, VT100, ISO 2022.
@@ -2123,20 +2127,20 @@ open class Terminal {
         if p.count == 2 {
             // print ("Settin charset to \(p[1])")
         }
-        
+
         if (p.count != 2) {
             cmdSelectDefaultCharset ()
             return
         }
         var ch: UInt8
         var charset: [UInt8:String]?
-        
+
         if CharSets.all.keys.contains(p [1]){
             charset = CharSets.all [p [1]]!
         } else {
             charset = nil
         }
-        
+
         switch p [0] {
         case UInt8 (ascii: "("):
             ch = 0
@@ -2162,7 +2166,7 @@ open class Terminal {
         buffer.lines [buffer.y + buffer.yBase].renderMode = to
         updateRange (buffer.y)
     }
-    
+
     //
     // ESC #6
     //
@@ -2170,7 +2174,7 @@ open class Terminal {
     {
         setLineRenderMode(to: .doubleWidth)
     }
-    
+
     //
     // dhtop
     //
@@ -2178,13 +2182,13 @@ open class Terminal {
     {
         setLineRenderMode(to: .doubledTop)
     }
-    
+
     // dhbot
     func cmdSetDoubleHeightBottom ()
     {
         setLineRenderMode(to: .doubledDown)
     }
-    
+
     //
     // swsh
     //
@@ -2192,7 +2196,7 @@ open class Terminal {
     {
         setLineRenderMode(to: .single)
     }
-    
+
     // ESC # 8
     func cmdScreenAlignmentPattern ()
     {
@@ -2261,7 +2265,7 @@ open class Terminal {
         let colBound = cols-1
         return (min (rowBound, top-1), min (colBound, left-1), min (rowBound, bottom-1), min (colBound, right-1))
     }
-    
+
     //
     // Copy Rectangular Area (DECCRA), VT400 and up.
     // CSI Pts ; Pls ; Pbs ; Prs ; Pps ; Ptd ; Pld ; Ppd $ v
@@ -2281,18 +2285,18 @@ open class Terminal {
             pars.append (ipars.count > 6 && ipars [5] != 0 ? ipars [5]: 1) // Ptd default is 1
             pars.append (ipars.count > 7 && ipars [6] != 0 ? ipars [6]: 1) // Pld default is 1
             pars.append (ipars.count > 8 && ipars [7] != 0 ? ipars [7]: 1) // Ppd default is 1
-            
+
             // We only support copying on the same page, and the page being 1
             if pars [4] == pars [7] && pars [4] == 1 {
                 if let (top, left, bottom, right) = getRectangleFromRequest(pars [0...3]) {
                     let rowTarget = min (rows-1, pars [5]-1)
                     let colTarget = min (cols-1, pars [6]-1)
-                    
+
                     // Block size
                     let columns = right-left+1
-                    
+
                     let cright = min (cols-1, left + min (columns, cols-colTarget))
-                    
+
                     var lines: [[CharData]] = []
                     for row in top...bottom {
                         let line = buffer.lines [row+buffer.yBase]
@@ -2302,7 +2306,7 @@ open class Terminal {
                         }
                         lines.append(lineCopy)
                     }
-                    
+
                     for row in 0...(bottom-top) {
                         if row+rowTarget >= buffer.rows {
                             break
@@ -2355,11 +2359,11 @@ open class Terminal {
              // DECIC - Insert Column
             let n = pars.count > 0 ? max (pars [0],1) : 1
             let buffer = self.buffer
-            
+
             if marginMode && buffer.x < buffer.marginLeft || buffer.x > buffer.marginRight {
                 return
             }
-            
+
             for row in buffer.scrollTop...buffer.scrollBottom {
                 let line = buffer.lines [row+buffer.yBase]
                 line.insertCells(pos: buffer.x, n: n, rightMargin: marginMode ? buffer.marginRight : cols-1, fillData: buffer.getNullCell())
@@ -2370,7 +2374,7 @@ open class Terminal {
             log ("CSI # } not implemented- XTPOPSGR with \(pars)")
         }
     }
-    
+
     // Required by the test suite
     // CSI Pi ; Pg ; Pt ; Pl ; Pb ; Pr * y
     // Request Checksum of Rectangular Area (DECRQCRA), VT420 and up.
@@ -2393,7 +2397,7 @@ open class Terminal {
                     for col in left...right {
                         let cd = line [col]
                         let ch = cd.code == 0 ? " " : cd.getCharacter()
-                        
+
                         for scalar in ch.unicodeScalars {
                             checksum += scalar.value
                         }
@@ -2428,7 +2432,7 @@ open class Terminal {
             break
         }
     }
-    
+
     // DECERA - Erase Rectangular Area
     // CSI Pt ; Pl ; Pb ; Pr ; $ z
     func cmdDECERA (_ pars: [Int])
@@ -2452,13 +2456,13 @@ open class Terminal {
             log ("CSI # { not implemented - XTPUSHSGR with \(pars)")
         }
     }
-    
+
     // Push video attributes onto stack (XTPUSHSGR), xterm.
     func cmdPushSg (_ pars: [Int])
     {
-        
+
     }
-    
+
     // DECSERA - Selective Erase Rectangular Area
     // CSI Pt ; Pl ; Pb ; Pr ; $ {
     func cmdSelectiveEraseRectangularArea (_ pars: [Int])
@@ -2531,7 +2535,7 @@ open class Terminal {
             log ("Unhandled csiT \(collect)")
         }
     }
-    
+
     func cmdXtermTitleModeSet (_ pars: [Int])
     {
         // Use the windowTextEncoding type
@@ -2558,7 +2562,7 @@ open class Terminal {
             }
         }
     }
-    
+
     func cmdXtermTitleModeReset (_ pars: [Int])
     {
         // Use the windowTextEncoding type
@@ -2697,12 +2701,12 @@ open class Terminal {
     {
         var left = min (cols-1, max (0, (pars.count > 0 ? pars[0] : 1) - 1))
         let right = min (cols-1, max (0, (pars.count > 1 ? pars [1] : cols) - 1))
-        
+
         left = min (left, right)
         buffer.marginLeft = left
         buffer.marginRight = right
     }
-    
+
     //
     //  CSI s (sometimes, if the margin mode is false)
     //  ESC 7
@@ -2742,7 +2746,7 @@ open class Terminal {
         }
         // normalize
         bottom -= 1
-        
+
         // only set the scroll region if top < bottom
         if top < bottom {
             buffer.scrollBottom = bottom
@@ -2758,7 +2762,7 @@ open class Terminal {
             options.cursorStyle = style
         }
     }
-    
+
     //
     // CSI Ps SP q  Set cursor style (DECSCUSR, VT520).
     //   Ps = 0  -> blinking block.
@@ -2799,11 +2803,11 @@ open class Terminal {
         let modeReset = 2
         //let modeAlwaysSet = 3
         let modeAlwaysReset = 4
-        
+
         // Same as reset for now, but it is something that should change if the companion setting is ever implemented
         let modeCouldBeImplementedButReset = 2
         let modeCouldBeImplementedButSet = 1
-        
+
         guard let mode = pars.first else {
             sendResponse (cc.CSI, ";0$y")
             return
@@ -2946,7 +2950,7 @@ open class Terminal {
             sendResponse (cc.CSI, "\(mode);\(res)$y")
         }
     }
-    
+
     //
     // Proxy for various CSI .* p commands
     func csiPHandler (_ pars: [Int], _ collect: cstring)
@@ -2956,12 +2960,12 @@ open class Terminal {
             cmdSoftReset ()
         case [UInt8 (ascii: "\"")]:
             cmdSetConformanceLevel (pars, collect)
-            
+
             // DECRQM - CSI ? Pa $ p
             // Request DEC mode
         case [63, 36]:
             cmdDecRqm (pars, decMode: true);
-        
+
             // DECRQM - CSI Pa $ p
             // Request ANSI mode
         case [36]:
@@ -2974,7 +2978,7 @@ open class Terminal {
             log ("Unhandled CSI \(r) with pars=\(pars)")
         }
     }
-    
+
     // CSI Pl ; Pc " p
     // Set conformance level (DECSCL), VT220 and up
     func cmdSetConformanceLevel (_ pars: [Int], _ collect: cstring)
@@ -3008,7 +3012,7 @@ open class Terminal {
             }
         }
     }
-    
+
     //
     // http://vt100.net/docs/vt220-rm/table4-10.html
     //
@@ -3020,7 +3024,7 @@ open class Terminal {
         originMode = false
 
         reverseWraparound = false
-        
+
         wraparound = true  // defaults: xterm - true, vt100 - false
         applicationKeypad = false
         syncScrollArea ()
@@ -3047,7 +3051,7 @@ open class Terminal {
     {
         cmdSoftReset()
     }
-    
+
     //
     // CSI Ps n  Device Status Report (DSR).
     //     Ps = 5  -> Status Report.  Result (``OK'') is
@@ -3082,7 +3086,7 @@ open class Terminal {
             case 6:
                 // cursor position
                 let y = max (1, buffer.y + 1 - (originMode ? buffer.scrollTop : 0))
-                
+
                 // Need the max, because the cursor could be before the leftMargin
                 let x = max (1, buffer.x + 1 - (originMode ? buffer.marginLeft : 0))
                 sendResponse (cc.CSI, "\(y);\(x)R")
@@ -3111,7 +3115,7 @@ open class Terminal {
                 // Requests keyboard type
                 // We respond "American keyboard", TODO: worth plugging something else?  Mac perhaps?
                 sendResponse(cc.CSI, "?27;1;0;0n")
-    
+
                 break;
             case 53:
                 // TODO: no dec locator/mouse
@@ -3225,7 +3229,7 @@ open class Terminal {
         let def = CharData.defaultAttr
 
         var i = 0
-        
+
         // Extended Colors
         //
         // There is an ambiguity here that is troublesome, to support extended
@@ -3242,7 +3246,7 @@ open class Terminal {
         func parseExtendedColor () -> Attribute.Color? {
             var color: Attribute.Color? = nil
             let v = parser._parsTxt
-            
+
             // If this is the new style
             if v.count > 2 && v [2] == UInt8(ascii: ":") {
                 switch pars [i] {
@@ -3271,13 +3275,13 @@ open class Terminal {
                              blue: UInt8(min (pars [i+2], 255)))
                         i += 3
                     }
-                    
+
                 case 3: // CMY color - not supported
                     break
-                    
+
                 case 4: // CMYK color - not supported
                     break
-                    
+
                 case 5: // indexed color
                     if i+1 < parCount {
                         color = Attribute.Color.ansi256(code: UInt8 (min (255, pars [i+1])))
@@ -3291,7 +3295,7 @@ open class Terminal {
             }
             return color
         }
-        
+
         while i < parCount {
             var p = pars [i]
             switch p {
@@ -3370,7 +3374,7 @@ open class Terminal {
                     bg = parsed
                 }
                 continue
-                
+
             case 49:
                 // reset bg
                 bg = CharData.defaultAttr.bg
@@ -3531,7 +3535,7 @@ open class Terminal {
             case 40:
                 allow80To132 = false
             case 41:
-                // Workaround not implemented 
+                // Workaround not implemented
                 break
             case 45:
                 reverseWraparound = false
@@ -3588,7 +3592,7 @@ open class Terminal {
                 syncScrollArea ()
                 showCursor ()
                 tdel?.bufferActivated(source: self)
-                
+
             case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
                 bracketedPasteMode = false
                 break
@@ -3733,7 +3737,7 @@ open class Terminal {
                 setgCharset (2, charset: CharSets.defaultCharset)
                 setgCharset (3, charset: CharSets.defaultCharset)
                 // set VT100 mode here
-                
+
             case 3: // DECCOLM - go to 132 col mode
                 if allow80To132 {
                     resize (cols: 132, rows: rows)
@@ -3822,7 +3826,7 @@ open class Terminal {
                 syncScrollArea ()
                 showCursor ()
                 tdel?.bufferActivated(source: self)
-                
+
             case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
                 // TODO: must implement bracketed paste mode
                 bracketedPasteMode = true
@@ -3833,7 +3837,7 @@ open class Terminal {
         } else {
             log ("Unhandled setMode (SM) with \(par) and \(collect)")
         }
-        
+
     }
 
 
@@ -3871,12 +3875,12 @@ open class Terminal {
                 q = max (pars [1], 1)
             }
         }
-        
+
         buffer.y = p - 1 + (originMode ? buffer.scrollTop : 0)
         if buffer.y >= rows {
             buffer.y = rows - 1
         }
-        
+
         buffer.x = q - 1 + (originMode && marginMode ? buffer.marginLeft : 0)
         if buffer.x >= cols {
             buffer.x = cols - 1
@@ -3979,7 +3983,7 @@ open class Terminal {
             log ("Got a CSI > c with an unknown set of argument")
             return
         }
-        
+
         // We should use a terminal emulation level, and not rely on the TERM name
         // for now, "xterm" as a part of the name surfaces all the capabilities.
         let name = options.termName
@@ -3993,7 +3997,7 @@ open class Terminal {
             let horizontalScrolling = 21
             let ansiColor = 22
             let rectangularEditing = 28
-            
+
             // Send Device Attributes (Primary DA).1
             if name.hasPrefix("xterm") {
                 sendResponse (cc.CSI, "?\(termVt525)\(sixel);\(cols132);\(printer);\(decsera);\(horizontalScrolling);\(ansiColor);\(terminalStateInterrogation);\(rectangularEditing)c")
@@ -4031,7 +4035,7 @@ open class Terminal {
         let p = min (maxRepeat, max (pars.count == 0 ? 1 : pars [0], 1))
         let line = buffer.lines [buffer.yBase + buffer.y]
         let chData = buffer.x - 1 < 0 ? CharData (attribute: CharData.defaultAttr) : line [buffer.x - 1]
-        
+
         for _ in 0..<p {
             insertCharacter(chData)
         }
@@ -4045,7 +4049,7 @@ open class Terminal {
     func cmdHPositionRelative (_ pars: [Int], _ collect: cstring)
     {
         let p = max (pars.count == 0 ? 1 : pars [0], 1)
-        
+
         buffer.x += p
         if buffer.x >= cols {
             buffer.x = cols - 1
@@ -4119,7 +4123,7 @@ open class Terminal {
             for i in (0..<rowCount).reversed() {
                 let src = buffer.lines [row+i]
                 let dst = buffer.lines [row+i+1]
-                
+
                 dst.copyFrom(src, srcCol: buffer.marginLeft, dstCol: buffer.marginLeft, len: columnCount)
             }
             let last = buffer.lines [row]
@@ -4146,7 +4150,7 @@ open class Terminal {
                 for i in 0..<(rowCount) {
                     let src = buffer.lines [row+i+1]
                     let dst = buffer.lines [row+i]
-                    
+
                     dst.copyFrom(src, srcCol: buffer.marginLeft, dstCol: buffer.marginLeft, len: columnCount)
                 }
                 let last = buffer.lines [row+rowCount]
@@ -4173,7 +4177,7 @@ open class Terminal {
     {
         let buffer = self.buffer
         var p = max (pars.count == 0 ? 1 : pars [0], 1)
-        
+
         if marginMode {
             if buffer.x < buffer.marginLeft || buffer.x > buffer.marginRight {
                 return
@@ -4188,7 +4192,7 @@ open class Terminal {
         }
         buffer.lines [buffer.y + buffer.yBase].deleteCells (
             pos: buffer.x, n: p, rightMargin: marginMode ? buffer.marginRight : cols-1, fillData: CharData (attribute: eraseAttr ()))
-        
+
         updateRange (buffer.y)
     }
 
@@ -4207,7 +4211,7 @@ open class Terminal {
         var j = rows - 1 - buffer.scrollBottom
         j = rows - 1 + buffer.yBase - j
         let ea = eraseAttr ()
-        
+
         if marginMode {
             if buffer.x >= buffer.marginLeft && buffer.x <= buffer.marginRight {
                 let columnCount = buffer.marginRight-buffer.marginLeft+1
@@ -4216,10 +4220,10 @@ open class Terminal {
                     for i in 0..<(rowCount) {
                         let src = buffer.lines [row+i+1]
                         let dst = buffer.lines [row+i]
-                        
+
                         dst.copyFrom(src, srcCol: buffer.marginLeft, dstCol: buffer.marginLeft, len: columnCount)
                     }
-                    
+
                     let last = buffer.lines [row+rowCount]
                     last.fill (with: CharData (attribute: ea), atCol: buffer.marginLeft, len: columnCount)
                 }
@@ -4236,7 +4240,7 @@ open class Terminal {
                 }
             }
         }
-        
+
         // this.maxRange();
         updateRange (startLine: buffer.y, endLine: buffer.scrollBottom)
     }
@@ -4267,7 +4271,7 @@ open class Terminal {
         }
 
         let p = max (pars.count == 0 ? 1 : pars [0], 1)
-        
+
         for y in buffer.scrollTop...buffer.scrollBottom {
             let line = buffer.lines [buffer.yBase + y]
             line.deleteCells(pos: buffer.x, n: p, rightMargin: marginMode ? buffer.marginRight : cols-1, fillData: buffer.getNullCell(attribute: eraseAttr()))
@@ -4295,7 +4299,7 @@ open class Terminal {
     {
         tdel?.send (source: self, data: ([UInt8] (text.utf8))[...])
     }
-    
+
     /**
      * Sends the provided text to the connected backend, takes a variable list of arguments
      * that could be either [UInt8], Strings, or a single UInt8 value.
@@ -4303,7 +4307,7 @@ open class Terminal {
     public func sendResponse (_ items: Any ...)
     {
         var buffer: [UInt8] = []
-        
+
         for item in items {
             if let arr = item as? [UInt8] {
                 buffer.append(contentsOf: arr)
@@ -4317,27 +4321,27 @@ open class Terminal {
         }
         tdel?.send (source: self, data: buffer[...])
     }
-    
+
 #if DEBUG
     public var silentLog = false
 #else
     public var silentLog = true
 #endif
-    
+
     func error (_ text: String)
     {
         if !silentLog {
             print("Error: \(text)")
         }
     }
-    
+
     func log (_ text: String)
     {
         if !silentLog {
             print("Info: \(text)")
         }
     }
-    
+
     /**
      * Processes the provided byte-array coming from the host, interprets them and
      * updates the screen state accordingly.
@@ -4346,7 +4350,7 @@ open class Terminal {
     {
         parse (buffer: byteArray[...])
     }
-    
+
     /**
      * Processes the provided byte-array coming from the host, interprets them and
      * updates the screen state accordingly.
@@ -4373,9 +4377,9 @@ open class Terminal {
     {
         parser.parse(data: buffer)
     }
- 
+
     var dirtyLines: Set<Int> = Set<Int>()
-    
+
     /**
      * Registers the given line as requiring to be updated by the front-end engine
      *
@@ -4387,7 +4391,7 @@ open class Terminal {
      * scroll-invariant update ranges.
      */
     func updateRange (_ y: Int, scrolling: Bool = false, updateDirtySet: Bool = true)
-    {        
+    {
         if !scrolling {
             let effectiveY = buffer.yDisp + y
             if effectiveY >= 0 {
@@ -4399,7 +4403,7 @@ open class Terminal {
                 }
             }
         }
-        
+
         if y >= 0 {
             if y < refreshStart {
                 refreshStart = y
@@ -4412,31 +4416,31 @@ open class Terminal {
             dirtyLines.insert (y)
         }
     }
-    
+
     func updateRange (startLine: Int, endLine: Int, scrolling: Bool = false)
     {
         updateRange (startLine, scrolling: scrolling, updateDirtySet: false)
         updateRange (endLine, scrolling: scrolling, updateDirtySet: false)
-        
+
         for line in min(startLine,endLine)...max(startLine,endLine) {
             dirtyLines.insert (line)
         }
     }
-    
+
     public func updateFullScreen ()
     {
         refreshStart = 0
         refreshEnd = rows
-        
+
         scrollInvariantRefreshStart = buffer.yDisp
         scrollInvariantRefreshEnd = buffer.yDisp + rows
-        
+
         for line in 0...rows {
             dirtyLines.insert (line)
         }
 
     }
-    
+
     /**
      * Returns the starting and ending lines that need to be redrawn, or nil
      * if no part of the screen needs to be updated.   Alternatively, you can
@@ -4455,7 +4459,7 @@ open class Terminal {
         //print ("Update: \(refreshStart) \(refreshEnd)")
         return (refreshStart, refreshEnd)
     }
-    
+
     /**
      * Returns a set containing the lines that have been modified, the
      * returned set is not sorted.
@@ -4468,7 +4472,7 @@ open class Terminal {
    {
        return dirtyLines
    }
-   
+
 
     /**
      * Check for payload identifiers that are not in use and stop retaining their payload,
@@ -4480,7 +4484,7 @@ open class Terminal {
         if TinyAtom.lastCollected == TinyAtom.lastUsed {
             return
         }
-        
+
         // check all atoms used in both buffers
         var used = Set<UInt16>()
         for buffer in [buffers.normal, buffers.alt] {
@@ -4495,7 +4499,7 @@ open class Terminal {
                 }
             }
         }
-        
+
         // since we create atoms in order we expect them to run out of use
         // in order as well and stop with first atom that is still in use
         for code in UInt16(TinyAtom.lastCollected + 1)...UInt16(TinyAtom.lastUsed) {
@@ -4503,12 +4507,12 @@ open class Terminal {
                 // code still in use
                 break
             }
-            
+
             TinyAtom.lastCollected = Int(code)
             TinyAtom.release(code: code)
         }
     }
-    
+
     /**
      * Returns the starting and ending lines that need to be redrawn, or nil
      * if no part of the screen needs to be updated.
@@ -4525,7 +4529,7 @@ open class Terminal {
         //print ("Update: \(scrollInvariantRefreshStart) \(scrollInvariantRefreshEnd)")
         return (scrollInvariantRefreshStart, scrollInvariantRefreshEnd)
     }
-    
+
     /**
      * Clears the state of the pending display redraw region as well as the dirtyLines set.
      */
@@ -4533,13 +4537,13 @@ open class Terminal {
     {
         refreshStart = Int.max
         refreshEnd = -1
-        
+
         scrollInvariantRefreshStart = Int.max
         scrollInvariantRefreshEnd = -1
-        
+
         dirtyLines.removeAll()
     }
-    
+
     /**
      * Zero-based (row, column) of cursor location relative to visible part of display.
      * Returns: a tuple, where the first element contains the column (x) and the second the row (y) where the cursor is.
@@ -4547,14 +4551,14 @@ open class Terminal {
     public func getCursorLocation() -> (x: Int, y: Int) {
         return (buffer.x, buffer.y)
     }
-    
+
     /**
      * Returns the uppermost visible row on the terminal buffer
      */
     public func getTopVisibleRow() -> Int {
         return buffer.yDisp
     }
-    
+
     // ESC c Full Reset (RIS)
     /// This performs a full reset of the terminal, like a soft reset, but additionally resets the buffer conents and scroll area.
     /// for a soft reset see `softReset`
@@ -4594,7 +4598,7 @@ open class Terminal {
             }
         }
     }
-    
+
     func columnScroll (back: Bool, at: Int)
     {
         if buffer.y < buffer.scrollTop || buffer.y > buffer.scrollBottom || buffer.x < buffer.marginLeft || buffer.x > buffer.marginRight {
@@ -4612,12 +4616,12 @@ open class Terminal {
         updateRange (buffer.scrollTop)
         updateRange (buffer.scrollBottom)
     }
-    
+
     // ESC D Index (Index is 0x84) - IND
     func cmdIndex ()
     {
         restrictCursor()
-        
+
         let buffer = self.buffer
         let newY = buffer.y + 1
         if newY > buffer.scrollBottom {
@@ -4630,9 +4634,9 @@ open class Terminal {
             buffer.x -= 1
         }
     }
-    
+
     var blankLine: BufferLine = BufferLine(cols: 0)
-    
+
     public func scroll (isWrapped: Bool = false)
     {
         let buffer = self.buffer
@@ -4674,7 +4678,7 @@ open class Terminal {
                 if buffer.hasScrollback {
                     buffer.linesTop += 1
                 }
-                
+
                 // When the buffer is full and the user has scrolled up, keep the text
                 // stable unless ydisp is right at the top
                 if userScrolling {
@@ -4703,7 +4707,7 @@ open class Terminal {
         // Flag rows that need updating
         updateRange (buffer.scrollTop, scrolling: true)
         updateRange (buffer.scrollBottom, scrolling: true)
-        
+
         if !buffer.hasScrollback {
             updateRange(startLine: buffer.scrollTop, endLine: buffer.scrollBottom)
         }
@@ -4716,12 +4720,12 @@ open class Terminal {
          */
         tdel?.scrolled(source: self, yDisp: buffer.yDisp)
     }
-        
+
     public func emitLineFeed ()
     {
         tdel?.linefeed(source: self)
     }
-    
+
     //
     // ESC n
     // ESC o
@@ -4741,7 +4745,7 @@ open class Terminal {
             charset = nil
         }
     }
-    
+
     //
     // ESC % @
     // ESC % G
@@ -4764,7 +4768,7 @@ open class Terminal {
             parser.reset ()
             resetToInitialState ()
     }
-            
+
     //
     // ESC >
     //   DEC mnemonic: DECKPNM (https://vt100.net/docs/vt510-rm/DECKPNM.html)
@@ -4775,7 +4779,7 @@ open class Terminal {
             applicationKeypad = false
             syncScrollArea ()
     }
-                    
+
     //
     // ESC =
     //   DEC mnemonic: DECKPAM (https://vt100.net/docs/vt510-rm/DECKPAM.html)
@@ -4791,7 +4795,7 @@ open class Terminal {
     {
         Attribute (fg: CharData.defaultAttr.fg, bg: curAttr.bg, style: CharData.defaultAttr.style)
     }
-    
+
     func setgCharset (_ v: UInt8, charset: [UInt8: String]?)
     {
         CharSets.all [v] = charset
@@ -4799,7 +4803,7 @@ open class Terminal {
             self.charset = charset
         }
     }
-    
+
     public func resize (cols: Int, rows: Int)
     {
         let newCols = max (cols, MINIMUM_COLS)
@@ -4817,7 +4821,7 @@ open class Terminal {
         buffers.alt.setupTabStops (index: oldCols)
         refresh (startRow: 0, endRow: self.rows - 1)
     }
-    
+
     func syncScrollArea ()
     {
         // This should call the viewport sync-scroll-area
@@ -4835,7 +4839,7 @@ open class Terminal {
 
         updateRange (startLine: startRow, endLine: endRow)
     }
-    
+
     public func showCursor ()
     {
         if cursorHidden == false {
@@ -4845,7 +4849,7 @@ open class Terminal {
         //refresh (startRow: buffer.y, endRow: buffer.y)
         tdel?.showCursor (source: self)
     }
-    
+
     public func hideCursor ()
     {
         if cursorHidden {
@@ -4870,7 +4874,7 @@ open class Terminal {
             data.append (0x80 | (UInt8 (rc & 0x3f)))
         }
     }
-    
+
     /**
      * Encodes the button action in the format expected by the client
      * - Parameter button: The button to encode
@@ -4880,7 +4884,7 @@ open class Terminal {
      * - Parameter control: `true` if the control key is pressed
      * - Returns: the encoded value
      */
-    public func encodeButton (button: Int, release: Bool, shift: Bool, meta: Bool, control: Bool) -> Int
+    public func encodeButton(button: Int, release: Bool, shift: Bool, meta: Bool, control: Bool, isDragging: Bool) -> Int
     {
         var value: Int
 
@@ -4913,13 +4917,16 @@ open class Terminal {
                 value |= 16
             }
         }
+        if isDragging {
+            value |= 32
+        }
         return value
     }
-    
+
     public func sendEvent (buttonFlags: Int, x: Int, y: Int) {
       sendEvent(buttonFlags: buttonFlags, x: x, y: y, pixelX: x, pixelY: y)
     }
-    
+
     /**
      * Sends a mouse event for a specific button at the specific location
      * - Parameter buttonFlags: Button flags encoded in Cb mode.
@@ -4935,13 +4942,15 @@ open class Terminal {
         case .sgr:
             let bflags : Int = ((buttonFlags & 3) == 3) ? (buttonFlags & ~3) : buttonFlags
             let m = ((buttonFlags & 3) == 3) ? "m" : "M"
-            sendResponse(cc.CSI, "<\(bflags);\(x+1);\(y+1)\(m)")
+            let s = "<\(bflags);\(x + 1);\(y + 1)\(m)"
+            print(s)
+            sendResponse(cc.CSI, s)
         case .sgrPixel:
             let bflags : Int = ((buttonFlags & 3) == 3) ? (buttonFlags & ~3) : buttonFlags
             let m = ((buttonFlags & 3) == 3) ? "m" : "M"
             print ("\(pixelX);\(pixelY)")
             sendResponse(cc.CSI, "<\(bflags);\(pixelX);\(pixelY)\(m)")
-            
+
         case .urxvt:
             sendResponse(cc.CSI, "\(buttonFlags+32);\(x+1);\(y+1)M");
         case .utf8:
@@ -4952,7 +4961,7 @@ open class Terminal {
             sendResponse(cc.CSI, buffer)
         }
     }
-    
+
     /**
      * Sends a mouse motion event for a specific button at the specific location
      * - Parameter buttonFlags: Button flags encoded in Cb mode.
@@ -4963,19 +4972,19 @@ open class Terminal {
     {
         sendEvent(buttonFlags: buttonFlags+32, x: x, y: y, pixelX: pixelX, pixelY: pixelY)
     }
-    
+
     static var matchColorCache : [Int:Int] = [:]
     func matchColor (_ r1: Int, _ g1: Int, _ b1: Int) -> Int32
     {
         // TODO
         abort ()
     }
-    
+
     var terminalTitle: String = ""              // The Xterm terminal title
     var iconTitle: String = ""                  // The Xterm minimized window title
     var terminalTitleStack: [String] = []
     var terminalIconStack: [String] = []
-    
+
     public func setTitle (text: String)
     {
         terminalTitle = text
@@ -5006,7 +5015,7 @@ open class Terminal {
             buffer.y -= 1
         }
     }
-    
+
     /**
      * Provides a baseline set of environment variables that would be useful to run the terminal,
      * you can customzie these accordingly.
@@ -5025,7 +5034,7 @@ open class Terminal {
         if trueColor {
             l.append ("COLORTERM=truecolor")
         }
-        
+
         // Without this, tools like "vi" produce sequences that are not UTF-8 friendly
         l.append ("LANG=en_US.UTF-8")
         let env = ProcessInfo.processInfo.environment
@@ -5036,7 +5045,7 @@ open class Terminal {
         }
         return l
     }
-    
+
     /// Specified the kind of buffer is being requested from the terminal
     public enum BufferKind {
         /// The currently active buffer (can be either normal or alt)
@@ -5046,7 +5055,7 @@ open class Terminal {
         /// The alternate buffer, regardless of which buffer is active
         case alt
     }
-    
+
     func bufferFromKind (kind: BufferKind) -> Buffer
     {
         switch kind {
@@ -5058,14 +5067,14 @@ open class Terminal {
             return buffers.alt
         }
     }
-    
+
     /// Returns the contents of the specified terminal buffer encoded as UTF8 in the provided Data buffer
     /// - Parameter kind: which buffer to retrive the data for
     /// - Parameter encoding: which encoding to use for the returned value, defaults to utf8
     public func getBufferAsData (kind: BufferKind = .active, encoding: String.Encoding = .utf8) -> Data
     {
         var result = Data()
-        
+
         let b = bufferFromKind(kind: kind)
         let newLine = Data([10])
         for row in 0..<b.lines.count {
@@ -5078,7 +5087,7 @@ open class Terminal {
         }
         return result
     }
-    
+
     /// Returns the text between the specified range
     ///
     public func getText (start: Position, end: Position) -> String
@@ -5100,7 +5109,7 @@ open class Terminal {
         var start = p1
         var end = p2
         let b = buffer
-        
+
         switch Position.compare (start, end) {
         case .equal:
             return []
@@ -5114,13 +5123,13 @@ open class Terminal {
         if start.row < 0 || start.row > b.lines.count {
             return []
         }
-        
+
         if end.row >= b.lines.count {
             end.row = b.lines.count-1
         }
         return _getSelectedLines(start, end)
     }
-    
+
     func _getSelectedLines(_ start: Position, _ end: Position) -> [Line]
     {
         var lines: [Line] = []
@@ -5128,12 +5137,12 @@ open class Terminal {
         var str = ""
         var currentLine = Line ()
         lines.append(currentLine)
-        
+
         // keep a list of blank lines that we see. if we see content after a group
         // of blanks, add those blanks but skip all remaining / trailing blanks
         // these will be blank lines in the selected text output
         var blanks: [LineFragment] = []
-        
+
         func addBlanks () {
             var lastLine = -1;
             for b in blanks {
@@ -5141,46 +5150,46 @@ open class Terminal {
                     currentLine = Line ()
                     lines.append(currentLine)
                 }
-                
+
                 lastLine = b.line
                 currentLine.add(fragment: b)
             }
             blanks = []
         };
-        
+
         // get the first line
         var bufferLine = buf.lines [start.row]
         if bufferLine.hasAnyContent() {
             let str: String = translateBufferLineToString (buffer: buf, line: start.row, start: start.col, end: start.row < end.row ? -1 : end.col)
-            
+
             let fragment = LineFragment (text: str, line: start.row, location: start.col, length: str.count)
             currentLine.add (fragment: fragment)
         }
-        
+
         // get the middle rows
         var line = start.row + 1
         var isWrapped = false
         while line < end.row {
             bufferLine = buffer.lines [line]
             isWrapped = bufferLine.isWrapped
-            
+
             str = translateBufferLineToString (buffer: buf, line: line, start: 0, end: -1)
-            
+
             if bufferLine.hasAnyContent () {
                 // add previously gathered blank fragments
                 addBlanks ()
-                
+
                 if !isWrapped {
                     // this line is not a wrapped line, so the
                     // prior line has a hard linefeed
                     // add a fragment to that line
                     currentLine.add (fragment: LineFragment.newLine (line: line - 1))
-                    
+
                     // start a new line
                     currentLine = Line ()
                     lines.append(currentLine)
                 }
-                
+
                 // add the text we found to the current line
                 currentLine.add (fragment: LineFragment (text: str, line: line, location: 0, length: str.count))
             } else {
@@ -5191,19 +5200,19 @@ open class Terminal {
                 if !isWrapped {
                     blanks.append (LineFragment.newLine (line: line - 1))
                 }
-                
+
                 blanks.append(LineFragment (text: str, line: line, location: 0, length: str.count))
             }
-            
+
             line += 1
         }
-        
+
         // get the last row
         if end.row != start.row {
             bufferLine = buffer.lines [end.row]
             if bufferLine.hasAnyContent () {
                 addBlanks ()
-                
+
                 isWrapped = bufferLine.isWrapped
                 str = translateBufferLineToString (buffer: buf, line: end.row, start: 0, end: end.col)
                 if !isWrapped {
@@ -5211,13 +5220,13 @@ open class Terminal {
                     currentLine = Line ()
                     lines.append(currentLine)
                 }
-                
+
                 currentLine.add (fragment: LineFragment (text: str, line: line, location: 0, length: str.count))
             }
         }
         return lines
     }
-    
+
     func translateBufferLineToString (buffer: Buffer, line: Int, start: Int, end: Int) -> String
     {
         buffer.translateBufferLineToString(lineIndex: line, trimRight: true, startCol: start, endCol: end).replacingOccurrences(of: "\u{0}", with: " ")
@@ -5230,7 +5239,7 @@ public extension TerminalDelegate {
     {
         // Do nothing
     }
-    
+
     func setTerminalTitle (source: Terminal, title: String) {
         // Do nothing
     }
@@ -5238,40 +5247,40 @@ public extension TerminalDelegate {
     func setTerminalIconTitle (source: Terminal, title: String) {
         // nothing
     }
-    
+
     func scrolled(source: Terminal, yDisp: Int) {
         // nothing
     }
-    
+
     func linefeed(source: Terminal) {
         // nothing
     }
-    
+
     func bufferActivated(source: Terminal) {
         // nothing
     }
-    
+
     func windowCommand(source: Terminal, command: Terminal.WindowManipulationCommand) -> [UInt8]? {
         // no special handling
         return nil
     }
-    
+
     func sizeChanged(source: Terminal) {
         // nothing
     }
-    
+
     func bell (source: Terminal){
         // nothing
     }
-    
+
     func isProcessTrusted (source: Terminal) -> Bool {
         return true
     }
-    
+
     func selectionChanged (source: Terminal){
         // nothing
     }
-    
+
     func showCursor(source: Terminal) {
         // nothing
     }
@@ -5282,49 +5291,49 @@ public extension TerminalDelegate {
 
     func mouseModeChanged(source: Terminal) {
     }
-    
+
     func hostCurrentDirectoryUpdated (source: Terminal) {
     }
-    
+
     func hostCurrentDocumentUpdated (source: Terminal) {
     }
-    
+
     func colorChanged (source: Terminal, idx: Int?) {
-        
+
     }
-    
+
     func getColors (source: Terminal) -> (foreground: Color, background: Color)
     {
         return (source.foregroundColor, source.backgroundColor)
     }
-    
+
     func setForegroundColor (source: Terminal, color: Color)
     {
         source.foregroundColor = color
     }
-    
+
     func setBackgroundColor (source: Terminal, color: Color)
     {
         source.backgroundColor = color
     }
-    
+
     func setCursorColor (source: Terminal, color: Color?)
     {
         source.cursorColor = color
     }
-    
+
     func iTermContent (source: Terminal, content: ArraySlice<UInt8>) {
     }
-    
+
     func clipboardCopy(source: Terminal, content: Data) {
     }
-    
+
     func notify(source: Terminal, title: String, body: String) {
     }
-    
+
     func createImageFromBitmap (source: Terminal, bytes: inout [UInt8], width: Int, height: Int){
     }
 
     func createImage (source: Terminal, data: Data, width: ImageSizeRequest, height: ImageSizeRequest, preserveAspectRatio: Bool) {
-    }    
+    }
 }

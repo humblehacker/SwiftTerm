@@ -17,7 +17,7 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
     var zoomGesture: NSMagnificationGestureRecognizer?
     var postedTitle: String = ""
     var postedDirectory: String? = nil
-    
+
     func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {
         if changingSize {
             return
@@ -26,13 +26,13 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
         //var border = view.window!.frame - view.frame
         var newFrame = terminal.getOptimalFrameSize ()
         let windowFrame = view.window!.frame
-        
+
         newFrame = CGRect (x: windowFrame.minX, y: windowFrame.minY, width: newFrame.width, height: windowFrame.height - view.frame.height + newFrame.height)
 
         view.window?.setFrame(newFrame, display: true, animate: true)
         changingSize = false
     }
-    
+
     func updateWindowTitle ()
     {
         var newTitle: String
@@ -51,17 +51,17 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
         }
         view.window?.title = newTitle
     }
-    
+
     func setTerminalTitle(source: LocalProcessTerminalView, title: String) {
         postedTitle = title
         updateWindowTitle ()
     }
-    
+
     func hostCurrentDirectoryUpdate (source: TerminalView, directory: String?) {
         self.postedDirectory = directory
         updateWindowTitle()
     }
-    
+
     func processTerminated(source: TerminalView, exitCode: Int32?) {
         view.window?.close()
         if let e = exitCode {
@@ -73,19 +73,19 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
     var terminal: LocalProcessTerminalView!
 
     static weak var lastTerminal: LocalProcessTerminalView!
-    
+
     func getBufferAsData () -> Data
     {
         return terminal.getTerminal().getBufferAsData ()
     }
-    
+
     func updateLogging ()
     {
 //        let path = logging ? "/Users/miguel/Downloads/Logs" : nil
 //        terminal.setHostLogging (directory: path)
         NSUserDefaultsController.shared.defaults.set (logging, forKey: "LogHostOutput")
     }
-    
+
     // Returns the shell associated with the current account
     func getShell () -> String
     {
@@ -99,25 +99,25 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
         }
         var pwd = passwd()
         var result: UnsafeMutablePointer<passwd>? = UnsafeMutablePointer<passwd>.allocate(capacity: 1)
-        
+
         if getpwuid_r(getuid(), &pwd, buffer, bufsize, &result) != 0 {
             return "/bin/bash"
         }
         return String (cString: pwd.pw_shell)
     }
-    
+
     class TD: TerminalDelegate {
         func send(source: Terminal, data: ArraySlice<UInt8>) {
         }
-        
-        
+
+
     }
 
     func test () {
         let a = Terminal (delegate: TD ())
         print (a)
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         test ()
@@ -126,30 +126,31 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
         terminal.addGestureRecognizer(zoomGesture!)
         ViewController.lastTerminal = terminal
         terminal.processDelegate = self
-        terminal.feed(text: "Welcome to SwiftTerm")
+        terminal.feed(text: "\u{001b}[31;1mWelcome to SwiftTerm\n")
+        terminal.feed(text: "\u{001b}[?1016h")
 
         let shell = getShell()
         let shellIdiom = "-" + NSString(string: shell).lastPathComponent
-        
+
         FileManager.default.changeCurrentDirectoryPath (FileManager.default.homeDirectoryForCurrentUser.path)
         terminal.startProcess (executable: shell, execName: shellIdiom)
         view.addSubview(terminal)
         logging = NSUserDefaultsController.shared.defaults.bool(forKey: "LogHostOutput")
         updateLogging ()
-        
+
         #if DEBUG_MOUSE_FOCUS
         var t = NSTextField(frame: NSRect (x: 0, y: 100, width: 200, height: 30))
         t.backgroundColor = NSColor.white
         t.stringValue = "Hello - here to test focus switching"
-        
+
         view.addSubview(t)
         #endif
     }
-    
+
     override func viewWillDisappear() {
         //terminal = nil
     }
-    
+
     @objc
     func zoomGestureHandler (_ sender: NSMagnificationGestureRecognizer) {
         if sender.magnification > 0 {
@@ -178,7 +179,7 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
     var lowerRow = 25
     var higherCol = 160
     var higherRow = 60
-    
+
     func queueNextSize ()
     {
         // If they requested a stop
@@ -203,7 +204,7 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
         }
         terminal.resize (cols: next.cols, rows: next.rows)
         var direction = resizificating
-        
+
         if next.rows == higherRow && next.cols == higherCol {
             direction = -1
         }
@@ -215,9 +216,9 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
             self.queueNextSize()
         }
     }
-    
+
     var resizificating = 0
-    
+
     @objc @IBAction
     func resizificator (_ source: AnyObject)
     {
@@ -245,7 +246,7 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
     {
         terminal.allowMouseReporting.toggle ()
     }
-    
+
     @objc @IBAction
     func exportBuffer (_ source: AnyObject)
     {
@@ -270,7 +271,7 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
         savePanel.allowedFileTypes = ["txt"]
         savePanel.title = "Export Buffer Contents As Text"
         savePanel.nameFieldStringValue = "TerminalCapture"
-        
+
         savePanel.begin { (result) in
             if result.rawValue == NSApplication.ModalResponse.OK.rawValue {
                 let data = getData ()
@@ -285,27 +286,27 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
             }
         }
     }
-    
+
     @objc @IBAction
     func softReset (_ source: AnyObject)
     {
         terminal.getTerminal().softReset ()
         terminal.setNeedsDisplay(terminal.frame)
     }
-    
+
     @objc @IBAction
     func hardReset (_ source: AnyObject)
     {
         terminal.getTerminal().resetToInitialState ()
         terminal.setNeedsDisplay(terminal.frame)
     }
-    
+
     @objc @IBAction
     func toggleOptionAsMetaKey (_ source: AnyObject)
     {
         terminal.optionAsMetaKey.toggle ()
     }
-    
+
     @objc @IBAction
     func biggerFont (_ source: AnyObject)
     {
@@ -313,7 +314,7 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
         guard size < 72 else {
             return
         }
-        
+
         terminal.font = NSFont.monospacedSystemFont(ofSize: size+1, weight: .regular)
     }
 
@@ -324,7 +325,7 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
         guard size > 5 else {
             return
         }
-        
+
         terminal.font = NSFont.monospacedSystemFont(ofSize: size-1, weight: .regular)
     }
 
@@ -333,12 +334,12 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
     {
         terminal.font = NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
     }
-    
+
 
     @objc @IBAction
     func addTab (_ source: AnyObject)
     {
-        
+
 //        if let win = view.window {
 //            win.tabbingMode = .preferred
 //            if let wc = win.windowController {
@@ -346,7 +347,7 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
 //                    do {
 //                        let x = Document()
 //                        x.makeWindowControllers()
-//                        
+//
 //                        try NSDocumentController.shared.newDocument(self)
 //                    } catch {}
 //                    print ("\(d.debugDescription)")
@@ -362,7 +363,7 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
 //            }
 //        }
     }
-    
+
     func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool
     {
         if item.action == #selector(debugToggleHostLogging(_:)) {
@@ -390,20 +391,19 @@ class ViewController: NSViewController, LocalProcessTerminalViewDelegate, NSUser
                 m.state = terminal.optionAsMetaKey ? NSControl.StateValue.on : NSControl.StateValue.off
             }
         }
-        
+
         // Only enable "Export selection" if we have a selection
         if item.action == #selector(exportSelection(_:)) {
             return terminal.selectionActive
         }
         return true
     }
-    
+
     @objc @IBAction
     func debugToggleHostLogging (_ source: AnyObject)
     {
         logging = !logging
         updateLogging()
     }
-    
-}
 
+}

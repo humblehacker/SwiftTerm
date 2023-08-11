@@ -41,7 +41,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         let bold: NSFont
         let italic: NSFont
         let boldItalic: NSFont
-        
+
         static var defaultFont: NSFont {
             if #available(macOS 10.15, *)  {
                 return NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
@@ -49,7 +49,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
                 return NSFont(name: "Menlo Regular", size: NSFont.systemFontSize) ?? NSFont(name: "Courier", size: NSFont.systemFontSize)!
             }
         }
-        
+
         public init(font baseFont: NSFont, fontSize: CGFloat? = nil) {
             self.normal = baseFont
             self.bold = NSFontManager.shared.convert(baseFont, toHaveTrait: [.boldFontMask])
@@ -69,12 +69,12 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             return normal.underlineThickness
         }
     }
-    
+
     /**
      * The delegate that the TerminalView uses to interact with its hosting
      */
     public weak var terminalDelegate: TerminalViewDelegate?
-    
+
     /// If true, the caret view will show different shapes depending on the focus
     /// otherwise, it will behave like it is focused
     public var caretViewTracksFocus: Bool {
@@ -90,26 +90,26 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     var search: SearchService!
     var debug: TerminalDebugView?
     var pendingDisplay: Bool = false
-    
+
     var cellDimension: CellDimension!
     var caretView: CaretView!
     var terminal: Terminal!
 
     var selection: SelectionService!
     private var scroller: NSScroller!
-    
+
     // Attribute dictionary, maps a console attribute (color, flags) to the corresponding dictionary
     // of attributes for an NSAttributedString
     var attributes: [Attribute: [NSAttributedString.Key:Any]] = [:]
     var urlAttributes: [Attribute: [NSAttributedString.Key:Any]] = [:]
-    
-    
+
+
     // Cache for the colors in the 0..255 range
     var colors: [NSColor?] = Array(repeating: nil, count: 256)
     var trueColors: [Attribute.Color:NSColor] = [:]
     var transparent = TTColor.transparent ()
     var isBigSur = true
-    
+
     /// This flag is automatically set to true after the initializer is called, if running on a system older than BigSur.
     /// Starting with BigSur any screen updates will invoke the draw() method with the whole region, regardless
     /// of how much changed.   Setting this to true, will disable this OS behavior, setting it to false, will keep
@@ -132,28 +132,28 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             selectNone()
         }
     }
-    
+
     public init(frame: CGRect, font: NSFont?) {
         self.fontSet = FontSet (font: font ?? FontSet.defaultFont)
 
         super.init (frame: frame)
         setup()
     }
-    
+
     public override init (frame: CGRect)
     {
         self.fontSet = FontSet (font: FontSet.defaultFont)
         super.init (frame: frame)
         setup()
     }
-    
+
     public required init? (coder: NSCoder)
     {
         self.fontSet = FontSet (font: FontSet.defaultFont)
         super.init (coder: coder)
         setup()
     }
-    
+
     private func setup()
     {
         wantsLayer = true
@@ -165,19 +165,19 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         setupOptions()
         setupFocusNotification()
     }
-    
+
     func startDisplayUpdates ()
     {
         // Not used on Mac
     }
-    
+
     func suspendDisplayUpdates()
     {
         // Not used on Mac
     }
-    
+
     var becomeMainObserver, resignMainObserver: NSObjectProtocol?
-    
+
     deinit {
         if let becomeMainObserver {
             NotificationCenter.default.removeObserver (becomeMainObserver)
@@ -186,7 +186,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             NotificationCenter.default.removeObserver (resignMainObserver)
         }
     }
-    
+
     func setupFocusNotification() {
         becomeMainObserver = NotificationCenter.default.addObserver(forName: .init("NSWindowDidBecomeMainNotification"), object: nil, queue: nil) { [unowned self] notification in
             self.caretView.updateCursorStyle()
@@ -196,7 +196,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             self.caretView.updateView()
         }
     }
-    
+
     func setupOptions ()
     {
         setupOptions (width: getEffectiveWidth (size: bounds.size), height: bounds.height)
@@ -205,7 +205,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
 
     /// This controls whether the backspace should send ^? or ^H, the default is ^?
     public var backspaceSendsControlH: Bool = false
-    
+
     var _nativeFg, _nativeBg: TTColor!
     var settingFg = false, settingBg = false
     /**
@@ -239,7 +239,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             settingBg = false
         }
     }
-    
+
     /// Controls the color for the caret
     public var caretColor: NSColor {
         get { caretView.caretColor }
@@ -268,7 +268,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     {
         window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 1
     }
-    
+
     @objc
     func scrollerActivated ()
     {
@@ -293,8 +293,8 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             print ("Scroller: New value introduced")
         }
     }
-    
-    
+
+
     func setupScroller()
     {
         let style: NSScroller.Style = .legacy
@@ -308,7 +308,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         scroller.action = #selector(scrollerActivated)
         scroller.target = self
     }
-    
+
     /// This method sents the `nativeForegroundColor` and `nativeBackgroundColor`
     /// to match macOS default colors for text and its background.
     public func configureNativeColors ()
@@ -317,15 +317,15 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         self.nativeBackgroundColor = NSColor.textBackgroundColor
 
     }
-    
+
     open func bufferActivated(source: Terminal) {
         updateScroller ()
     }
-    
+
     open func send(source: Terminal, data: ArraySlice<UInt8>) {
         terminalDelegate?.send (source: self, data: data)
     }
-        
+
     /**
      * Given the current set of columns and rows returns a frame that would host this control.
      */
@@ -333,22 +333,22 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     {
         return NSRect (x: 0, y: 0, width: cellDimension.width * CGFloat(terminal.cols) + scroller.frame.width, height: cellDimension.height * CGFloat(terminal.rows))
     }
-    
+
     func getEffectiveWidth (size: CGSize) -> CGFloat
     {
         return (size.width-scroller.frame.width)
     }
-    
+
     open func scrolled(source terminal: Terminal, yDisp: Int) {
         //selectionView.notifyScrolled(source: terminal)
         updateScroller()
         terminalDelegate?.scrolled(source: self, position: scrollPosition)
     }
-    
+
     open func linefeed(source: Terminal) {
         selection.selectNone()
     }
-    
+
     /// This vaiable controls whether mouse events are sent to the application running under the
     /// terminal if it has requested the data.   This poses a problem for selection, so users
     /// need a way of toggling this behavior.
@@ -364,18 +364,18 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     {
         debug?.update()
     }
-    
+
     func updateScroller ()
     {
         scroller.isEnabled = canScroll
         scroller.doubleValue = scrollPosition
         scroller.knobProportion = scrollThumbsize
     }
-    
+
     var userScrolling = false
 
     override open func viewWillDraw() {
-        
+
         // Starting with BigSur, it looks like even sending one pixel to be redrawn will trigger
         // a call to draw() for the whole surface
         if disableFullRedrawOnAnyChanges {
@@ -389,29 +389,29 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         super.setNeedsDisplay(invalidRect)
     }
     #endif
-    
+
     func getCurrentGraphicsContext () -> CGContext?
     {
         NSGraphicsContext.current?.cgContext
     }
-    
+
     override public func draw (_ dirtyRect: NSRect) {
         guard let currentContext = getCurrentGraphicsContext() else {
             return
         }
         drawTerminalContents (dirtyRect: dirtyRect, context: currentContext, bufferOffset: terminal.buffer.yDisp)
     }
-    
+
     public override func cursorUpdate(with event: NSEvent)
     {
         NSCursor.iBeam.set ()
     }
-    
+
     func makeFirstResponder ()
     {
         window?.makeFirstResponder (self)
     }
-    
+
     open override var frame: NSRect {
         get {
             return super.frame
@@ -424,13 +424,13 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             updateCursorPosition()
         }
     }
-    
+
     public override func resizeSubviews(withOldSize oldSize: NSSize) {
         super.resizeSubviews(withOldSize: oldSize)
         updateScroller()
         selection.active = false
     }
-    
+
     private var _hasFocus = false
     open var hasFocus : Bool {
         get {
@@ -454,7 +454,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
         return response
     }
-    
+
     public override func resignFirstResponder() -> Bool {
         let response = super.resignFirstResponder()
         if response {
@@ -463,16 +463,16 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
         return response
     }
-    
+
     public override var acceptsFirstResponder: Bool {
         get {
             return true
         }
     }
-    
+
     // Tracking object, maintained by `startTracking` and `deregisterTrackingInterest`
     var tracking: NSTrackingArea? = nil
-    
+
     // Turns on AppKit mouse event tracking - used both by the url highlighter and the mouse move,
     // when the client application has set MouseMove.anyEvent
     //
@@ -486,7 +486,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             addTrackingArea(tracking!)
         }
     }
-    
+
     // Can be invoked by both the keyboard handler monitoring the command key, and the
     // mouse tracking system, only when both are off, this is turned off.
     func deregisterTrackingInterest ()
@@ -498,7 +498,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             }
         }
     }
-    
+
     func turnOffUrlPreview ()
     {
         if commandActive {
@@ -507,18 +507,18 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             commandActive = false
         }
     }
-    
+
     // If true, the Command key has been pressed
     var commandActive = false
-    
+
     // We monitor the flags changed to enable URL previews on mouse-hover like iTerm
     // when the Command key is pressed.
-    
+
     public override func flagsChanged(with event: NSEvent) {
         if event.modifierFlags.contains(.command){
             commandActive = true
             startTracking()
-            
+
             if let payload = getPayload(for: event) as? String {
                 previewUrl (payload: payload)
             }
@@ -527,12 +527,12 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
         super.flagsChanged(with: event)
     }
-    
+
     public override func mouseExited(with event: NSEvent) {
         turnOffUrlPreview()
         super.mouseExited(with: event)
     }
-    
+
     /// If set to true, the terminal treats the "Option" key as the Meta key in old terminals,
     /// which has the effect of sending the ESC character before the character that was
     /// entered.  Applications use this to provide bindings for Alt-keys, or in Emacs terms
@@ -541,7 +541,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     /// If this is set to `false`, then the key is passed to the OS, which produces the
     /// OS specific feature.
     public var optionAsMetaKey: Bool = true
-    
+
     //
     // We capture a handful of keydown events and pre-process those, and then let
     // interpretKeyEvents do the rest of the work, that includes text-insertion, and
@@ -557,7 +557,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     public override func keyDown(with event: NSEvent) {
         selection.active = false
         let eventFlags = event.modifierFlags
-        
+
         // Handle Option-letter to send the ESC sequence plus the letter as expected by terminals
         if eventFlags.contains ([.option, .command]) {
             if event.charactersIgnoringModifiers == "o" {
@@ -624,7 +624,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
                         //                    case NSLeftArrowFunctionKey:
                         //                        send (EscapeSequences.MoveLeftNormal)
                         //                    case NSRightArrowFunctionKey:
-                    //                        send (EscapeSequences.MoveRightNormal)
+                        //                        send (EscapeSequences.MoveRightNormal)
                     case NSPageUpFunctionKey:
                         pageUp ()
                     case NSPageDownFunctionKey:
@@ -636,10 +636,10 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             }
             return
         }
-        
+
         interpretKeyEvents([event])
     }
-    
+
     public override func doCommand(by selector: Selector) {
         switch selector {
         case #selector(insertNewline(_:)):
@@ -695,7 +695,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             print ("Unhandle selector \(selector)")
         }
     }
-    
+
     // NSTextInputClient protocol implementation
     open func insertText(_ string: Any, replacementRange: NSRange) {
         if let str = string as? NSString {
@@ -704,24 +704,24 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         // TODO: I do not think we actually need this needsDisplay, the data fed should bubble this up
         // needsDisplay = true
     }
-    
+
     // NSTextInputClient protocol implementation
     open func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
         // nothing
     }
-    
+
     // NSTextInputClient protocol implementation
     open func unmarkText() {
         // nothing
     }
-    
+
     // NSTextInputClient protocol implementation
     open func selectedRange() -> NSRange {
         guard let selection = self.selection, selection.active else {
             // This means "no selection":
             return NSRange.empty
         }
-        
+
         var startLocation = (selection.start.row * terminal.buffer.rows) + selection.start.col
         var endLocation = (selection.end.row * terminal.buffer.rows) + selection.end.col
         if startLocation > endLocation {
@@ -733,51 +733,51 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
         return NSRange(location: startLocation, length: endLocation - startLocation)
     }
-    
+
     // NSTextInputClient protocol implementation
     open func markedRange() -> NSRange {
         print ("markedRange: This should return the actual range from the selection")
-        
+
         // This means "no marked" - when we fix, we should address
         return NSRange.empty
     }
-    
+
     // NSTextInputClient protocol implementation
     open func hasMarkedText() -> Bool {
         // print ("hasMarkedText: This should return the actual range from the selection")
         // TODO
         return false
     }
-    
+
     // NSTextInputClient protocol implementation
     open func attributedSubstring(forProposedRange range: NSRange, actualRange: NSRangePointer?) -> NSAttributedString? {
         print ("Attribuetd string")
         return nil
     }
-    
+
     // NSTextInputClient Protocol implementation
     open func validAttributesForMarkedText() -> [NSAttributedString.Key] {
         // TODO print ("validAttributesForMarkedText: This should return the actual range from the selection")
         return []
     }
-    
+
     // NSTextInputClient protocol implementation
     open func firstRect(forCharacterRange range: NSRange, actualRange: NSRangePointer?) -> NSRect {
         actualRange?.pointee = range
-        
+
         if let r = window?.convertToScreen(convert(caretView!.frame, to: nil)) {
             return r
         }
-        
+
         return .zero
     }
-    
+
     // NSTextInputClient protocol implementation
     open func characterIndex(for point: NSPoint) -> Int {
         print ("characterIndex:for point: This should return the actual range from the selection")
         return NSNotFound
     }
-    
+
     open func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
         //print ("Validating selector: \(item.action)")
         switch item.action {
@@ -806,13 +806,13 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             return false
         }
     }
-    
+
     open func selectionChanged(source: Terminal) {
         needsDisplay = true
     }
-    
+
     func cut (sender: Any?) {}
-    
+
     @objc
     open func paste(_ sender: Any)
     {
@@ -820,42 +820,45 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         let text = clipboard.string(forType: .string)
         insertText(text ?? "", replacementRange: NSRange(location: 0, length: 0))
     }
-    
+
     @objc
     open func copy(_ sender: Any)
     {
         // find the selected range of text in the buffer and put in the clipboard
         let str = selection.getSelectedText()
-        
+
         let clipboard = NSPasteboard.general
         clipboard.clearContents()
         clipboard.setString(str, forType: .string)
     }
-    
+
     public override func selectAll(_ sender: Any?)
     {
         selectAll ()
     }
-    
+
     //func undo (sender: Any) {}
     //func redo (sender: Any) {}
     func zoomIn (sender: Any) {}
     func zoomOut (sender: Any) {}
     func zoomReset (sender: Any) {}
-    
+
     // Returns the vt100 mouseflags
     func encodeMouseEvent (with event: NSEvent) -> Int
     {
         let flags = event.modifierFlags
         let isReleaseEvent = [NSEvent.EventType.leftMouseUp, .otherMouseUp, .rightMouseUp].contains(event.type)
-        
-        return terminal.encodeButton(button: event.buttonNumber, release: isReleaseEvent, shift: flags.contains(.shift), meta: flags.contains(.option), control: flags.contains(.control))
+        let isPressEvent = [NSEvent.EventType.leftMouseDown, .otherMouseDown, .rightMouseDown].contains(event.type)
+
+        let isDragging = !isPressEvent && !isReleaseEvent
+
+        return terminal.encodeButton(button: event.buttonNumber, release: isReleaseEvent, shift: flags.contains(.shift), meta: flags.contains(.option), control: flags.contains(.control), isDragging: isDragging)
     }
-    
+
     func calculateMouseHit (with event: NSEvent) -> (grid: Position, pixels: Position)
     {
         func toInt (_ p: NSPoint) -> Position {
-            
+
             let x = min (max (p.x, 0), bounds.width)
             let y = min (max (p.y, 0), bounds.height)
             return Position (col: Int (x), row: Int (bounds.height-y))
@@ -868,14 +871,14 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
         return (Position(col: min (max (0, col), terminal.cols-1), row: min (row, terminal.rows-1)), toInt (point))
     }
-    
+
     private func sharedMouseEvent (with event: NSEvent)
     {
         let hit = calculateMouseHit(with: event)
         let buttonFlags = encodeMouseEvent(with: event)
         terminal.sendEvent(buttonFlags: buttonFlags, x: hit.grid.col, y: hit.grid.row, pixelX: hit.pixels.col, pixelY: hit.pixels.row)
     }
-    
+
     private var autoScrollDelta = 0
     // Callback from when the mouseDown autoscrolling timer goes off
     private func scrollingTimerElapsed (source: Timer)
@@ -889,15 +892,15 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             scrollUp(lines: autoScrollDelta)
         }
     }
-    
+
     public override func mouseDown(with event: NSEvent) {
         if allowMouseReporting && terminal.mouseMode.sendButtonPress() {
             sharedMouseEvent(with: event)
             return
         }
-        
+
         let hit = calculateMouseHit(with: event).grid
-        
+
         switch event.clickCount {
         case 1:
             if selection.active == true {
@@ -909,24 +912,24 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             }
         case 2:
             selection.selectWordOrExpression(at: Position(col: hit.col, row: hit.row + terminal.buffer.yDisp), in: terminal.buffer)
-            
+
         default:
             // 3 and higher
-            
+
             selection.select(row: hit.row + terminal.buffer.yDisp)
         }
         setNeedsDisplay(bounds)
     }
-    
+
     func getPayload (for event: NSEvent) -> Any?
     {
         let hit = calculateMouseHit(with: event).grid
         let cd = terminal.buffer.lines [terminal.buffer.yDisp+hit.row][hit.col]
         return cd.getPayload()
     }
-    
+
     var didSelectionDrag: Bool = false
-    
+
     public override func mouseUp(with event: NSEvent) {
         if event.modifierFlags.contains(.command){
             if let payload = getPayload(for: event) as? String {
@@ -939,31 +942,32 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             sharedMouseEvent(with: event)
             return
         }
-        
+
         #if DEBUG
         // let hit = calculateMouseHit(with: event)
         //print ("Up at col=\(hit.col) row=\(hit.row) count=\(event.clickCount) selection.active=\(selection.active) didSelectionDrag=\(didSelectionDrag) ")
         #endif
-        
+
         didSelectionDrag = false
     }
-    
+
     public override func mouseDragged(with event: NSEvent) {
+        print("mouseDragged: \(event)")
         let mouseHit = calculateMouseHit(with: event)
         let hit = mouseHit.grid
         if allowMouseReporting {
             if terminal.mouseMode.sendMotionEvent() {
                 let flags = encodeMouseEvent(with: event)
-            
-                terminal.sendMotion(buttonFlags: flags, x: hit.col, y: hit.row, pixelX: mouseHit.pixels.col, pixelY: mouseHit.pixels.row)
-            
+
+                terminal.sendEvent(buttonFlags: flags, x: hit.col, y: hit.row, pixelX: mouseHit.pixels.col, pixelY: mouseHit.pixels.row)
+
                 return
             }
             if terminal.mouseMode != .off {
                 return
             }
         }
-                
+
         if selection.active {
             selection.dragExtend(row: hit.row, col: hit.col)
         } else {
@@ -980,7 +984,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
         setNeedsDisplay(bounds)
     }
-    
+
     func tryUrlFont () -> NSFont
     {
         for x in ["Optima", "Helvetica", "Helvetica Neue"] {
@@ -990,7 +994,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
         return NSFont.systemFont(ofSize: 12)
     }
-    
+
     // The payload contains the terminal data which is expected to be of the form
     // params;URL, so we need to extract the second component, but we also assume that
     // the input might be ill-formed, so we might return nil in that case
@@ -1010,7 +1014,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
         return nil
     }
-    
+
     var urlPreview: NSTextField?
     func previewUrl (payload: String)
     {
@@ -1036,7 +1040,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             }
         }
     }
-    
+
     func removePreviewUrl ()
     {
         if let urlPreview = self.urlPreview {
@@ -1044,22 +1048,25 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             self.urlPreview = nil
         }
     }
-    
+
     public override func mouseMoved(with event: NSEvent) {
+        print("mouseMoved: \(event)")
         let hit = calculateMouseHit(with: event)
         if commandActive {
             if let payload = getPayload(for: event) as? String {
                 previewUrl (payload: payload)
             }
         }
-        
+
         if terminal.mouseMode.sendMotionEvent() {
             let flags = encodeMouseEvent(with: event)
             terminal.sendMotion(buttonFlags: flags, x: hit.grid.col, y: hit.grid.row, pixelX: hit.pixels.col, pixelY: hit.pixels.row)
         }
     }
-    
+
     public override func scrollWheel(with event: NSEvent) {
+        print("scrollWheel: \(event)")
+
         if event.deltaY == 0 {
             return
         }
@@ -1070,7 +1077,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             scrollDown(lines: velocity)
         }
     }
-    
+
     private func calcScrollingVelocity (delta: Int) -> Int
     {
         if delta > 9 {
@@ -1084,29 +1091,29 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
         return 1
     }
-    
+
     public override func resetCursorRects() {
         addCursorRect(bounds, cursor: .iBeam)
     }
-    
+
     public func resetFontSize ()
     {
         fontSet = FontSet (font: FontSet.defaultFont)
     }
-    
+
     func getImageScale () -> CGFloat {
         self.window?.backingScaleFactor ?? 1
     }
-    
+
     func scale (image: NSImage, size: CGSize) -> NSImage {
-        
+
         let scaledImg = TTImage (size: CGSize (width: size.width, height: size.height))
         let srcRatio = image.size.height/image.size.width
         let scaledRatio = size.width/size.height
         scaledImg.lockFocus()
         let srcRect = CGRect(origin: CGPoint.zero, size: image.size)
         let dstRect: CGRect
-        
+
         if srcRatio < scaledRatio {
             let nw = (size.height * image.size.width) / image.size.height
             dstRect = CGRect (x: (size.width-nw)/2, y: 0, width: nw, height: size.height)
@@ -1115,11 +1122,11 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             dstRect = CGRect (x: 0, y: (size.height-nh)/2, width: size.width, height: nh)
         }
         image.draw(in: dstRect, from: srcRect, operation: .copy, fraction: 1)
-        
+
         scaledImg.unlockFocus()
         return scaledImg
     }
-    
+
     func drawImageInStripe (image: TTImage, srcY: CGFloat, width: CGFloat, srcHeight: CGFloat, dstHeight: CGFloat, size: CGSize) -> TTImage? {
         guard let bitmapImage = NSBitmapImageRep (
                 bitmapDataPlanes: nil,
@@ -1139,7 +1146,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         stripe.unlockFocus()
         return stripe
     }
-    
+
     open func showCursor(source: Terminal) {
         if caretView.superview == nil {
             addSubview(caretView)
@@ -1149,7 +1156,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     open func hideCursor(source: Terminal) {
         caretView.removeFromSuperview()
     }
-    
+
     open func cursorStyleChanged (source: Terminal, newStyle: CursorStyle) {
         caretView.style = newStyle
         updateCaretView()
@@ -1162,7 +1169,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     public func isProcessTrusted(source: Terminal) -> Bool {
         true
     }
-    
+
     public func mouseModeChanged(source: Terminal) {
         if source.mouseMode == .anyEvent {
             startTracking()
@@ -1172,35 +1179,35 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
             }
         }
     }
-    
+
     public func setTerminalTitle(source: Terminal, title: String) {
         terminalDelegate?.setTerminalTitle(source: self, title: title)
     }
-    
+
     public func sizeChanged(source: Terminal) {
         terminalDelegate?.sizeChanged(source: self, newCols: source.cols, newRows: source.rows)
         updateScroller ()
     }
-    
+
     func ensureCaretIsVisible ()
     {
         let realCaret = terminal.buffer.y + terminal.buffer.yBase
         let viewportEnd = terminal.buffer.yDisp + terminal.rows
-        
+
         if realCaret >= viewportEnd || realCaret < terminal.buffer.yDisp {
             scrollTo (row: terminal.buffer.yBase)
         }
     }
-    
+
     public func setTerminalIconTitle(source: Terminal, title: String) {
         //
     }
-    
+
     // Terminal.Delegate method implementation
     public func windowCommand(source: Terminal, command: Terminal.WindowManipulationCommand) -> [UInt8]? {
         return nil
     }
-    
+
     public func iTermContent (source: Terminal, content: ArraySlice<UInt8>) {
         terminalDelegate?.iTermContent(source: self, content: content)
     }
@@ -1220,12 +1227,12 @@ extension TerminalViewDelegate {
             }
         }
     }
-    
+
     public func bell (source: TerminalView)
     {
         NSSound.beep()
     }
-    
+
     public func iTermContent (source: TerminalView, content: ArraySlice<UInt8>) {
     }
 }
