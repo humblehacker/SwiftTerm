@@ -843,16 +843,140 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     func zoomOut (sender: Any) {}
     func zoomReset (sender: Any) {}
 
+    // iTerm has separate press/release/motion methods
+    enum MouseEventType {
+        case press
+        case release
+        case motion
+    }
+
+
     // Returns the vt100 mouseflags
-    func encodeMouseEvent (with event: NSEvent) -> Int
+    func encodeMouseEvent(with event: NSEvent, eventType: MouseEventType) -> Int
     {
         let flags = event.modifierFlags
-        let isReleaseEvent = [NSEvent.EventType.leftMouseUp, .otherMouseUp, .rightMouseUp].contains(event.type)
-        let isPressEvent = [NSEvent.EventType.leftMouseDown, .otherMouseDown, .rightMouseDown].contains(event.type)
+        let button = buttonNumber(from: event)
+        print("buttonNumber = \(button) (\(button.rawValue))")
 
-        let isDragging = !isPressEvent && !isReleaseEvent
+        var cb = 0
 
-        return terminal.encodeButton(button: event.buttonNumber, release: isReleaseEvent, shift: flags.contains(.shift), meta: flags.contains(.option), control: flags.contains(.control), isDragging: isDragging)
+        switch eventType {
+        case .press:
+            cb = button.rawValue & 3
+            if (button == .scrollDown || button == .scrollUp ||
+                button == .scrollLeft || button == .scrollRight) {
+                cb |= MouseButtonModifierFlag.scroll.rawValue
+            }
+        case .release:
+            cb = button.rawValue & 3
+        case .motion:
+            if (button == .none) {
+                cb = button.rawValue;
+            } else {
+                cb = button.rawValue % 3;
+            }
+            if (button == .scrollDown || button == .scrollUp ||
+                button == .scrollLeft || button == .scrollRight) {
+                cb |= MouseButtonModifierFlag.scroll.rawValue
+            }
+        }
+
+        if (button.rawValue >= MouseButtonNumber.backward.rawValue) {
+            cb |= MouseButtonModifierFlag.extra.rawValue
+        }
+        if ((flags.rawValue & NSEvent.ModifierFlags.control.rawValue) != 0) {
+            cb |= MouseButtonModifierFlag.ctrl.rawValue
+        }
+        if ((flags.rawValue & NSEvent.ModifierFlags.shift.rawValue) != 0) {
+            cb |= MouseButtonModifierFlag.shift.rawValue
+        }
+        if ((flags.rawValue & NSEvent.ModifierFlags.option.rawValue) != 0) {
+            cb |= MouseButtonModifierFlag.meta.rawValue
+        }
+
+        return cb;
+    }
+
+    private func mouseEventType(event: NSEvent) -> MouseEventType {
+        var eventType: MouseEventType = .press
+
+        if ([NSEvent.EventType.leftMouseUp, .rightMouseUp, .otherMouseUp].contains(event.type)) {
+            eventType = .release
+        } else if ([NSEvent.EventType.leftMouseDragged, .rightMouseDragged, .otherMouseDragged, .mouseMoved].contains(event.type)) {
+            eventType = .motion
+        } else if ([NSEvent.EventType.leftMouseDown, .rightMouseDown, .otherMouseDown].contains(event.type)) {
+            eventType = .press
+        } else {
+            print ("Unknown mouse event type: \(event.type)")
+        }
+        return eventType
+    }
+
+    enum MouseButtonNumber: Int {
+        case unknown = -1     // unknown button
+        // X11 button number
+        case left = 0         // left button
+        case middle = 1       // middle button
+        case right = 2        // right button
+        case none = 3         // no button pressed - for 1000/1005/1015 mode
+        case scrollDown = 4   // scroll down
+        case scrollUp = 5     // scroll up
+        case scrollLeft = 6   // scroll left
+        case scrollRight = 7  // scroll right
+        case backward = 8     // backward (4th button)
+        case forward = 9      // forward (5th button)
+        case extra10 = 10     // extra button 1
+        case extra11 = 11     // extra button 2
+    }
+
+    enum MouseButtonModifierFlag: Int {
+        // Keyboard modifier flags
+        case shift = 4
+        case meta = 8
+        case ctrl = 16
+
+        // scroll flag
+        case scroll = 64  // this is a scroll event
+
+        // extra buttons flag
+        case extra = 128
+    } ;
+
+
+    // stolen from iTerm PTYMouseHandler.mouseReportingNumberForEvent
+    func buttonNumber(from event: NSEvent) -> MouseButtonNumber {
+        switch event.type {
+        case .leftMouseDragged, .leftMouseDown, .leftMouseUp:
+            return .left
+        case .rightMouseDown, .rightMouseUp, .rightMouseDragged:
+            return .right
+        case .otherMouseDown, .otherMouseUp, .otherMouseDragged:
+            switch (event.buttonNumber) {
+            case 2:
+                return .middle
+            case 3:
+                return .backward
+            case 4:
+                return .forward
+            case 5:
+                return .extra10
+            case 6:
+                return .extra11
+            default:
+                return .unknown
+            }
+            case .scrollWheel:
+                if abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) {
+                    var scrollLeft = event.scrollingDeltaX > 0
+                    let natural = UserDefaults.standard.bool(forKey: "com.apple.swipescrolldirection")
+                    if natural { scrollLeft.toggle() }
+                    return scrollLeft ? .scrollLeft : .scrollRight
+                } else {
+                    return event.scrollingDeltaY > 0 ? .scrollDown : .scrollUp
+                }
+        default:
+            return .none
+        }
     }
 
     func calculateMouseHit (with event: NSEvent) -> (grid: Position, pixels: Position)
@@ -875,8 +999,9 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     private func sharedMouseEvent (with event: NSEvent)
     {
         let hit = calculateMouseHit(with: event)
-        let buttonFlags = encodeMouseEvent(with: event)
-        terminal.sendEvent(buttonFlags: buttonFlags, x: hit.grid.col, y: hit.grid.row, pixelX: hit.pixels.col, pixelY: hit.pixels.row)
+        var eventType = mouseEventType(event: event)
+        let buttonFlags = encodeMouseEvent(with: event, eventType: eventType)
+        terminal.sendEvent(buttonFlags: buttonFlags, x: hit.grid.col, y: hit.grid.row, pixelX: hit.pixels.col, pixelY: hit.pixels.row, release: eventType == .release)
     }
 
     private var autoScrollDelta = 0
@@ -957,9 +1082,10 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         let hit = mouseHit.grid
         if allowMouseReporting {
             if terminal.mouseMode.sendMotionEvent() {
-                let flags = encodeMouseEvent(with: event)
+                var eventType = mouseEventType(event: event)
+                let flags = encodeMouseEvent(with: event, eventType: eventType)
 
-                terminal.sendEvent(buttonFlags: flags, x: hit.col, y: hit.row, pixelX: mouseHit.pixels.col, pixelY: mouseHit.pixels.row)
+                terminal.sendMotion(buttonFlags: flags, x: hit.col, y: hit.row, pixelX: mouseHit.pixels.col, pixelY: mouseHit.pixels.row)
 
                 return
             }
@@ -1059,23 +1185,80 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
 
         if terminal.mouseMode.sendMotionEvent() {
-            let flags = encodeMouseEvent(with: event)
+            let eventType = mouseEventType(event: event)
+            let flags = encodeMouseEvent(with: event, eventType: eventType)
             terminal.sendMotion(buttonFlags: flags, x: hit.grid.col, y: hit.grid.row, pixelX: hit.pixels.col, pixelY: hit.pixels.row)
         }
     }
 
+    var _scrolling = false
+    var _haveSeenScrollWheelEvent = false
+    var _disableScrollReportingUntilMomentumEnds = false
+
     public override func scrollWheel(with event: NSEvent) {
         print("scrollWheel: \(event)")
 
-        if event.deltaY == 0 {
-            return
+        let point = self.convert(event.locationInWindow, from:nil)
+
+        if (event.momentumPhase == NSEvent.Phase.began) {
+//            DLog(@"set scrolling=YES for %@\n%@", self, [NSThread callStackSymbols]);
+            _scrolling = true
+        } else if (event.momentumPhase == NSEvent.Phase.ended ||
+            event.momentumPhase == NSEvent.Phase.cancelled ||
+            event.momentumPhase == NSEvent.Phase.stationary) {
+//            DLog(@"set scrolling=NO for %@\n%@", self, [NSThread callStackSymbols]);
+            _scrolling = false
         }
-        let velocity = calcScrollingVelocity(delta: Int (abs (event.deltaY)))
-        if event.deltaY > 0 {
-            scrollUp (lines: velocity)
-        } else {
-            scrollDown(lines: velocity)
+//        [_threeFingerTapGestureRecognizer scrollWheel];
+
+        if (!_haveSeenScrollWheelEvent) {
+            // Work around a weird bug. Commit 9e4b97b18fac24bea6147c296b65687f0523ad83 caused it.
+            // When you restore a window and have an inline scroller (but not a legacy scroller!) then
+            // it will be at the top, even though we're scrolled to the bottom. You can either jiggle
+            // it after a delay to fix it, or after thousands of dispatch_async calls, or here. None of
+            // these make any sense, nor does the bug itself. I get the feeling that a giant rats' nest
+            // of insanity underlies scroll wheels on macOS.
+            _haveSeenScrollWheelEvent = true
+//            [self.mouseDelegate mouseHandlerJiggle:self];
         }
+        if (event.momentumPhase.isEmpty ||
+            event.momentumPhase == NSEvent.Phase.began) {
+//            DLog(@"disableScrollReportingUntilMomentumEnds <- NO");
+            _disableScrollReportingUntilMomentumEnds = false
+        }
+        /*if ([self scrollWheelShouldSendDataForEvent:event at:point]) {
+            DLog(@"disableScrollReportingUntilMomentumEnds=%@", @(_disableScrollReportingUntilMomentumEnds));
+            if (!_disableScrollReportingUntilMomentumEnds) {
+                [self sendDataForScrollEvent:event];
+                return NO;
+            }
+        } else*/
+        if (event.momentumPhase == NSEvent.Phase.began) {
+//            DLog(@"disableScrollReportingUntilMomentumEnds <- YES");
+            _disableScrollReportingUntilMomentumEnds = true
+        }
+        if (event.momentumPhase == NSEvent.Phase.ended) {
+//            DLog(@"disableScrollReportingUntilMomentumEnds <- NO");
+            _disableScrollReportingUntilMomentumEnds = false
+        }
+
+        sharedMouseEvent(with: event)
+//        if ([self handleMouseEvent:event testOnly:NO deltaOut:NULL reportableOut:&reportable]) {
+//            DLog(@"Mouse event was handled so returning");
+//            return NO;
+//        }
+
+        return
+
+//        if event.deltaY == 0 {
+//            return
+//        }
+//        let velocity = calcScrollingVelocity(delta: Int (abs (event.deltaY)))
+//        if event.deltaY > 0 {
+//            scrollUp (lines: velocity)
+//        } else {
+//            scrollDown(lines: velocity)
+//        }
     }
 
     private func calcScrollingVelocity (delta: Int) -> Int

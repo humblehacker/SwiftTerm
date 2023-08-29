@@ -4917,15 +4917,15 @@ open class Terminal {
                 value |= 16
             }
         }
-        if isDragging {
-            value |= 32
-        }
+//        if isDragging {
+//            value |= 32
+//        }
         return value
     }
 
-    public func sendEvent (buttonFlags: Int, x: Int, y: Int) {
-      sendEvent(buttonFlags: buttonFlags, x: x, y: y, pixelX: x, pixelY: y)
-    }
+//    public func sendEvent (buttonFlags: Int, x: Int, y: Int) {
+//        sendEvent(buttonFlags: buttonFlags, x: x, y: y, pixelX: x, pixelY: y, release: false)
+//    }
 
     /**
      * Sends a mouse event for a specific button at the specific location
@@ -4933,16 +4933,15 @@ open class Terminal {
      * - Parameter x: X coordinate for the event
      * - Parameter y: Y coordinate for the event
      */
-    public func sendEvent (buttonFlags: Int, x: Int, y: Int, pixelX: Int, pixelY: Int)
+    public func sendEvent(buttonFlags: Int, x: Int, y: Int, pixelX: Int, pixelY: Int, release: Bool)
     {
         //print ("got \(mouseProtocol)")
         switch mouseProtocol {
         case .x10:
             sendResponse(cc.CSI, "M", [UInt8(buttonFlags+32), min (UInt8(255), UInt8(32 + x+1)), min (UInt8(255), UInt8(32+y+1))])
         case .sgr:
-            let bflags : Int = ((buttonFlags & 3) == 3) ? (buttonFlags & ~3) : buttonFlags
-            let m = ((buttonFlags & 3) == 3) ? "m" : "M"
-            let s = "<\(bflags);\(x + 1);\(y + 1)\(m)"
+            let m = release ? "m" : "M"
+            let s = "<\(buttonFlags);\(x + 1);\(y + 1)\(m)"
             print(s)
             sendResponse(cc.CSI, s)
         case .sgrPixel:
@@ -4970,7 +4969,7 @@ open class Terminal {
      */
     public func sendMotion (buttonFlags: Int, x: Int, y: Int, pixelX: Int, pixelY: Int)
     {
-        sendEvent(buttonFlags: buttonFlags+32, x: x, y: y, pixelX: pixelX, pixelY: pixelY)
+        sendEvent(buttonFlags: buttonFlags+32, x: x, y: y, pixelX: pixelX, pixelY: pixelY, release: false)
     }
 
     static var matchColorCache : [Int:Int] = [:]
